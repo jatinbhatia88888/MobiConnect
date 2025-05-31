@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "type":"module",
   "repository": {
     "type": "git",
     "url": "{ \"type\": \"git\", \"url\": \"git+https://github.com/username/repo.ghttps://github.com/jatinbhatia88888/MobiConnecit\" }"
@@ -13,6 +14,7 @@
   "author": "JatinBhatia",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mediasoup": "^3.16.0",
     "socket.io": "^4.8.1"

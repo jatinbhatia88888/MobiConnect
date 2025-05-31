@@ -1,7 +1,18 @@
 import express from 'express'
 import http from 'http'
+import process from 'process'
 import {Server} from 'socket.io';
+import mongoose from 'mongoose';
 import cors from 'cors'
+import dotenv from 'dotenv'
+dotenv.config()
+const uri = process.env.MONGODBURI
+
+ mongoose.connect(uri)
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
+
+// app.use(process)
 const app=express();
 app.use(cors())
 const server=http.createServer(app);
