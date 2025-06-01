@@ -13,5 +13,10 @@ export default defineConfig({
         home: path.resolve(__dirname, 'home.html'),
       }
     }
-  }
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 })
