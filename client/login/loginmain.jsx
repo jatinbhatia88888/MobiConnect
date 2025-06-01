@@ -9,21 +9,23 @@ import {useState} from 'react'
     setEmail(event.target.value);
    }
    
-   return (<form >
+   return (<form method="post" action="http://localhost:8000/login">
          <div className="w-96 ...">
         <label htmlFor ="logForm" >Name:</label>
-        <input type="text" id="logForm" onChange={handleChange} value={name} ></input>
+        <input type="text" id="logForm" onChange={handleChange} value={name} name="name" ></input>
         <br></br>
         </div>
         <h1 className="text-3xl font-italic underline">
          Hello world!
         </h1>
         <div className="w-96 ...">
-        <label htmlFor ="logForm">Email:</label>
+        <label htmlFor ="logForm" >Email:</label>
         <div className="bg-sky-50">
-        <input type="email" id="logemail" onChange={handleEChange} value={email} className="w-96 ..."></input>
+        <input type="email" id="logemail" onChange={handleEChange} value={email} name="email" className="w-96 ..."></input>
+        
         </div>
         <p className="text-gray-700 dark:text-gray-400">{name}</p>
         </div>
+        <button type="submit">Submit</button>
    </form>)
 }
