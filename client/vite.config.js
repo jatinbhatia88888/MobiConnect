@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         login: path.resolve(__dirname, 'login.html'),
         home: path.resolve(__dirname, 'home.html'),
+        signup:path.resolve(__dirname,'signup.html'),
       }
     }
   },

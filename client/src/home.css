@@ -1,0 +1,61 @@
+.search-box input {
+  padding: 8px;
+  width: 50%;
+  border: none;
+  background-color: #222;
+  color: #fff;
+  
+  top:0;
+ 
+  display: flex;
+  justify-content: center;
+  
+}
+
+.dropdown {
+  background: #333;
+  color: white;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #444;
+  display: flex;
+  justify-content: center;
+}
+
+.dropdown li {
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.dropdown li:hover {
+  background-color: #444;
+
+}
+
+.chat-window {
+  background: #111;
+  color: white;
+  padding: 10px;
+  width: 80%;
+  display: flex;
+  justify-content: center;
+}
+
+.messages {
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.messages p.me {
+  text-align: right;
+  color: #4caf50;
+}
+
+.messages p.them {
+  text-align: left;
+  color: #f44336;
+}
