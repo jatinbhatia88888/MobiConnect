@@ -30,7 +30,7 @@ const server=http.createServer(app);
 app.use(session({
   secret: process.env.SECRET_KEY,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: { secure: false,
     maxAge:7*24*60*60*1000,
   },
@@ -79,9 +79,15 @@ app.post('/login', async (req,res)=>{
 
  
   req.session.userId = user._id;
+req.session.save(err => {
+  if (err) {
+    console.error("Session save error:", err);
+    return res.redirect("http://localhost:5173/login");
+  }
+  res.redirect("http://localhost:5173/home");
 
-   res.redirect("http://localhost:5173/home")
-})
+
+})});
 
 app.post('/signup',(req,res)=>{
     const name=req.body.name;

@@ -1,0 +1,58 @@
+.home-container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Sidebar takes fixed width */
+.home-sidebar {
+  width: 250px;
+  min-width: 70px; /* when collapsed */
+  height: 100%;
+}
+
+/* Main content holds search + chat */
+.home-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Search stays on top */
+.home-search {
+  padding: 10px;
+  margin:5px;
+  background-color: #1a1a1a;
+  z-index: 1;
+}
+
+/* Chat fills remaining space */
+.home-chat {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Responsive: stack everything vertically */
+@media (max-width: 768px) {
+  .home-container {
+    flex-direction: column;
+  }
+
+  .home-sidebar {
+    width: 100%;
+    height: auto;
+  }
+
+  .home-main {
+    height: auto;
+  }
+
+  .home-chat {
+    height: auto;
+  }
+}

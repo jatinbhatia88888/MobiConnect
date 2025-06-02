@@ -39,14 +39,16 @@
   background: #111;
   color: white;
   padding: 10px;
-  width: 80%;
+  height: 100%;
+  width: 100%;
   display: flex;
   justify-content: center;
 }
 
 .messages {
-  height: 300px;
-  overflow-y: auto;
+  height:50px;
+  width: 250px;
+  overflow-x: auto;
   margin-bottom: 10px;
 }
 
