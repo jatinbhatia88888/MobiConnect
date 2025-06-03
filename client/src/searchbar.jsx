@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-//{ onUserSelect }
-import './common.css'
-export  function SearchUser() {
+
+import './home.css'
+export  function SearchUser({ onUserSelect }) {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);
 

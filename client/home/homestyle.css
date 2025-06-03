@@ -19,7 +19,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -34,6 +34,8 @@
 /* Chat fills remaining space */
 .home-chat {
   flex: 1;
+  flex-direction: column;
+  width:100%;
   overflow: hidden;
 }
 

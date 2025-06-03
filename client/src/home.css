@@ -41,13 +41,14 @@
   padding: 10px;
   height: 100%;
   width: 100%;
-  display: flex;
-  justify-content: center;
+  /* display: flex;
+  justify-content: center; */
 }
 
 .messages {
-  height:50px;
+  height:60px;
   width: 250px;
+  padding: 5em;
   overflow-x: auto;
   margin-bottom: 10px;
 }
