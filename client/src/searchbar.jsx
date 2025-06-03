@@ -32,7 +32,7 @@ export  function SearchUser({ onUserSelect }) {
       {users.length > 0 && (
         <ul className="dropdown">
           {users.map(user => (
-            <li key={user.name} onClick={() => onUserSelect(user)}>
+            <li key={user.name} onClick={() => onUserSelect(user.name)}>
               {user.name}
             </li>
           ))}

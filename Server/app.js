@@ -9,6 +9,7 @@ import User from './model/userSchema.js'
 import session from 'express-session'
 import MongoStore from 'connect-mongo';
 const userSocketMap = new Map(); 
+import sharedSession from 'express-socket.io-session';
 
 dotenv.config()
 const uri = process.env.MONGODBURI
@@ -27,7 +28,7 @@ app.use(cors({
 
 const server=http.createServer(app);
 
-app.use(session({
+const mongosession=session({
   secret: process.env.SECRET_KEY,
   resave: false,
   saveUninitialized: false,
@@ -37,8 +38,9 @@ app.use(session({
   store: MongoStore.create({
     mongoUrl: uri,
     autoRemove: 'native'
-  })
-}))
+  })})
+app.use(mongosession);
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true})); 
 
 const io= new Server(server,{
@@ -72,14 +74,15 @@ app.post('/login', async (req,res)=>{
    console.log(name);
    console.log(email);
    const user = await User.findOne({ email });
-    
+   
   if (!user || user.name !== name) {
     return res.redirect("http://localhost:5173/login");
   }
 
  
   req.session.userId = user._id;
-req.session.save(err => {
+  req.session.username=user.name;
+   req.session.save(err => {
   if (err) {
     console.error("Session save error:", err);
     return res.redirect("http://localhost:5173/login");
@@ -107,11 +110,36 @@ app.post('/signup',(req,res)=>{
    res.redirect("http://localhost:5173/login")
    }
 })
+
+io.use(sharedSession(mongosession, {
+  autoSave: true
+}));
+
+
 io.on("connect",(socket)=>{
+    const session = socket.handshake.session;
+    userSocketMap.set(session.username, socket.id);
+
     console.log("connection")
-    socket.emit("message","this is hi from sever ")
+    socket.on("sendMessage",(msg)=>{
+      console.log(msg);
+      const toSocket = userSocketMap.get(msg.recv);
+      console.log(`toSocket:${toSocket}`);
+      if(toSocket){
+      io.to(toSocket).emit('receiveMessage',{
+        message:msg.message,
+        fromUser:session.username,
+      })
+      }
+    })
     socket.on('disconnect',()=>{
         console.log("client disconnected ");
+        setInterval(() => {
+          console.dir(session)    ;
+          console.log("Session:", session);
+       console.log("User ID:", session.userId);
+        console.log("Username:", session.username);       
+        }, 100000000);
        
     })
    

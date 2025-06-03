@@ -4,15 +4,15 @@ import { socket } from './socket';
 import './home.css'
 
 export  function ChatWindow({ toUser }) {
+  const t=toUser;
   
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   
   const sendMessage = () => {
     socket.emit('sendMessage', {
-      toUser: UserName,
+      recv: toUser,
       message,
-       
     });
     setMessages(prev => [...prev, { message, fromMe: true }]);
     setMessage('');
