@@ -7,6 +7,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import User from './model/userSchema.js'
 import session from 'express-session'
+import Rooms from './model/roomSchema.js';
 import MongoStore from 'connect-mongo';
 const userSocketMap = new Map(); 
 import sharedSession from 'express-socket.io-session';
@@ -58,13 +59,13 @@ const isAuthenticated = (req, res, next) => {
 app.get('/',isAuthenticated,(req,res)=>{
    res.send("hello sir ji")
 })
+
 app.get("/search",isAuthenticated , async (req,res)=>{
   const query=req.query.query;
  const users = await User.find(
       { name: new RegExp(query, 'i') },
       { name: 1, _id: 0 }
     );
-
   console.log(users);
   res.json(users)
 })
@@ -78,7 +79,7 @@ app.post('/login', async (req,res)=>{
   if (!user || user.name !== name) {
     return res.redirect("http://localhost:5173/login");
   }
-
+ 
  
   req.session.userId = user._id;
   req.session.username=user.name;
@@ -110,7 +111,26 @@ app.post('/signup',(req,res)=>{
    res.redirect("http://localhost:5173/login")
    }
 })
-
+app.post('/create-group',isAuthenticated, async (req,res)=>{
+  
+  try{
+    console.dir(req);
+    const inst =new Rooms({
+         name:req.body.groupname,
+         admin:req.session.username,
+         members:[req.session.username],
+    });
+      await inst.save();
+       
+       const peer= await User.findOne({name:req.session.username});
+       peer.rooms.push(req.body.groupname);
+       peer.save();
+       await res.redirect("http://localhost:5173/home");
+  }
+  catch{
+    res.send("error occured");
+  }
+})
 io.use(sharedSession(mongosession, {
   autoSave: true
 }));

@@ -1,19 +1,42 @@
 import React, { useState, useEffect } from "react";
 import "./sidebar.css";
 
-export const Sidebar = () => {
+export const Sidebar = ({ refreshTrigger}) => {
   const [open, setOpen] = useState(true);
-
-  // Collapse on small screen
+  // const [users, setUsers] = useState([]);
+  // const [groups, setGroups] = useState([]);
+  
   useEffect(() => {
     const handleResize = () => {
-      setOpen(window.innerWidth > 768); // Auto collapse for small screens
+      setOpen(window.innerWidth > 768); 
     };
-    handleResize(); // On load
+    handleResize(); 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+   
 
+  
+
+  // useEffect(() => {
+  //   fetch('http://localhost:8000/users', { credentials: 'include' })
+  //     .then(res => res.json())
+  //     .then(setUsers);
+
+  //   fetch('http://localhost:8000/groups', { credentials: 'include' })
+  //     .then(res => res.json())
+  //     .then(setGroups);
+  // }, [refreshTrigger])
+
+
+
+
+
+
+
+
+
+  
   const users = [
     { id: "u1", name: "Priya" },
     { id: "u2", name: "Huma" },
