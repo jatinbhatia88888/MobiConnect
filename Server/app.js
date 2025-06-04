@@ -60,9 +60,18 @@ app.get('/',isAuthenticated,(req,res)=>{
    res.send("hello sir ji")
 })
 
-app.get("/search",isAuthenticated , async (req,res)=>{
+app.get("/search/user",isAuthenticated , async (req,res)=>{
   const query=req.query.query;
  const users = await User.find(
+      { name: new RegExp(query, 'i') },
+      { name: 1, _id: 0 }
+    );
+  console.log(users);
+  res.json(users)
+})
+app.get("/search/group",isAuthenticated , async (req,res)=>{
+  const query=req.query.query;
+ const users = await Rooms.find(
       { name: new RegExp(query, 'i') },
       { name: 1, _id: 0 }
     );
@@ -114,7 +123,7 @@ app.post('/signup',(req,res)=>{
 app.post('/create-group',isAuthenticated, async (req,res)=>{
   
   try{
-    console.dir(req);
+    //console.dir(req);
     const inst =new Rooms({
          name:req.body.groupname,
          admin:req.session.username,
@@ -124,8 +133,8 @@ app.post('/create-group',isAuthenticated, async (req,res)=>{
        
        const peer= await User.findOne({name:req.session.username});
        peer.rooms.push(req.body.groupname);
-       peer.save();
-       await res.redirect("http://localhost:5173/home");
+        await peer.save();
+       res.json("ok");
   }
   catch{
     res.send("error occured");
@@ -134,16 +143,64 @@ app.post('/create-group',isAuthenticated, async (req,res)=>{
 io.use(sharedSession(mongosession, {
   autoSave: true
 }));
+app.get("/chatuser",isAuthenticated,async (req,res)=>{
+   
+   const ans = await User.findOne({ name: req.session.username }, 'chattedWith');
+
+    console.log(` happy happy pls mahakal ${req.session.username}`)
+    console.log(ans);                               
+ console.log(ans.chattedWith);
+  res.json(ans.chattedWith);
+})
+app.get("/chatgroup",isAuthenticated,async (req,res)=>{
+   
+   const ans = await User.findOne({ name: req.session.username }, 'rooms');
+   console.log(ans.rooms);
+   res.json(ans.rooms);
+})
+
+
+
+
+
+
 
 
 io.on("connect",(socket)=>{
     const session = socket.handshake.session;
+    console.dir(session);
     userSocketMap.set(session.username, socket.id);
-
-    console.log("connection")
-    socket.on("sendMessage",(msg)=>{
+    const chattedWithSet = new Set();
+    console.log("connection");
+    socket.on("sendMessage",async (msg)=>{
       console.log(msg);
+      if (!chattedWithSet.has(msg.recv)) {
+      const receiver = await User.findOne({ name: msg.recv });
+      const sender = await User.findOne({ name: session.username});
+      console.dir(sender)
+      console.log(`user is ${receiver}& ${session.username}`);
+      console.log(`user is ${sender}`);
+
+     const alreadyChatted1 = sender.chattedWith.includes(msg.recv);
+      const alreadyChatted2 = receiver.chattedWith.includes(session.username);
+      if (!alreadyChatted1) {
+        await User.updateOne(
+          { name: session.username },
+          { $addToSet: { chattedWith: msg.recv } }
+        );
+      }
+      if(!alreadyChatted2){
+        await User.updateOne(
+          { name: msg.recv },
+          { $addToSet: { chattedWith: session.username } }
+        );
+      }
+       chattedWithSet.add(msg.recv); 
+    }
+    
+      
       const toSocket = userSocketMap.get(msg.recv);
+      if(!toSocket) return ;
       console.log(`toSocket:${toSocket}`);
       if(toSocket){
       io.to(toSocket).emit('receiveMessage',{
@@ -163,7 +220,7 @@ io.on("connect",(socket)=>{
        
     })
    
-})
+});
 server.listen("8000",()=>{
     console.log("this is mahakal ki help")
 })

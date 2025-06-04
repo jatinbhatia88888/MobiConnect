@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./sidebar.css";
 
-export const Sidebar = ({ refreshTrigger}) => {
+export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
   const [open, setOpen] = useState(true);
-  // const [users, setUsers] = useState([]);
-  // const [groups, setGroups] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [groups, setGroups] = useState([]);
   
   useEffect(() => {
     const handleResize = () => {
@@ -18,15 +18,22 @@ export const Sidebar = ({ refreshTrigger}) => {
 
   
 
-  // useEffect(() => {
-  //   fetch('http://localhost:8000/users', { credentials: 'include' })
-  //     .then(res => res.json())
-  //     .then(setUsers);
+  useEffect(() => {
+    fetch('http://localhost:8000/chatuser', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setUsers)
+      .catch((err)=>{
+        console.log("no user ")
+      });
 
-  //   fetch('http://localhost:8000/groups', { credentials: 'include' })
-  //     .then(res => res.json())
-  //     .then(setGroups);
-  // }, [refreshTrigger])
+    fetch('http://localhost:8000/chatgroup', { credentials: 'include' })
+      .then(res => res.json())
+      .then(setGroups)
+      .catch((err)=>{
+        console.log("no group ")
+      });
+;
+  }, [refreshTrigger])
 
 
 
@@ -37,16 +44,16 @@ export const Sidebar = ({ refreshTrigger}) => {
 
 
   
-  const users = [
-    { id: "u1", name: "Priya" },
-    { id: "u2", name: "Huma" },
-    { id: "u3", name: "Ravi" },
-  ];
+  // const users = [
+  //   { id: "u1", name: "Priya" },
+  //   { id: "u2", name: "Huma" },
+  //   { id: "u3", name: "Ravi" },
+  // ];
 
-  const groups = [
-    { id: "g1", name: "Project Alpha" },
-    { id: "g2", name: "Family Group" },
-  ];
+  // const groups = [
+  //   { id: "g1", name: "Project Alpha" },
+  //   { id: "g2", name: "Family Group" },
+  // ];
 
   return (
     <div className={`sidebar ${open ? "open" : "collapsed"}`}>
@@ -61,9 +68,15 @@ export const Sidebar = ({ refreshTrigger}) => {
         <h2 className="section-title">{open ? "Chats" : "C"}</h2>
         <ul className="list">
           {users.map((user) => (
-            <li key={user.id}>
-              <a href={`/chat/${user.name.toLowerCase()}`} className="item-link">
-                {open ? user.name : user.name[0]}
+            <li key={user}>
+              <a href="#"
+                // href={`/group/${group.toLowerCase().replace(/\s+/g, "-")}`}
+                onClick={(event)=>{
+                  event.preventDefault();
+                  onUserSelect(user)
+                }}
+                 className="item-link">
+                {open ? user : user[0]}
               </a>
             </li>
           ))}
@@ -74,12 +87,17 @@ export const Sidebar = ({ refreshTrigger}) => {
         <h2 className="section-title">{open ? "Rooms" : "R"}</h2>
         <ul className="list">
           {groups.map((group) => (
-            <li key={group.id}>
+            <li key={group}>
               <a
-                href={`/group/${group.name.toLowerCase().replace(/\s+/g, "-")}`}
+                href="#"
+                // href={`/group/${group.toLowerCase().replace(/\s+/g, "-")}`}
+                onClick={(event)=>{
+                  event.preventDefault();
+                  onUserSelect(group)
+                }}
                 className="item-link"
               >
-                {open ? group.name : group.name[0]}
+                {open ? group : group[0]}
               </a>
             </li>
           ))}

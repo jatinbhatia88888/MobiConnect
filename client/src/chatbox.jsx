@@ -36,7 +36,7 @@ export  function ChatWindow({ toUser }) {
           <p key={idx} className={m.fromMe ? 'me' : 'them'}>{m.message}</p>
         ))}
       </div>
-      <div ClassName="typebar">
+      <div className="typebar">
       <input
         value={message}
         onChange={e => setMessage(e.target.value)}

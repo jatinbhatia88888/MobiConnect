@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 
 import './home.css'
-export  function SearchUser({ onUserSelect }) {
+export  function SearchUser({ onUserSelect ,require}) {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);
 
@@ -11,7 +11,7 @@ export  function SearchUser({ onUserSelect }) {
     setQuery(value);
 
     if (value.length > 1) {
-      const res = await fetch(`http://localhost:8000/search?query=${value}`, {
+      const res = await fetch(`http://localhost:8000/search/${require}?query=${value}`, {
  credentials: 'include' 
 });
       const data = await res.json();

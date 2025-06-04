@@ -10,11 +10,14 @@ const userSchema=new mongoose.Schema({
         match: [/.+\@.+\..+/],
         required:true,
     },
-     rooms:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Rooms",
-     }
-
+     rooms:[{
+        type:String,
+        
+     }],
+      chattedWith:[{
+    type:String,
+      
+  }]
 });
 const  User= mongoose.model('User', userSchema);
 export default  User
