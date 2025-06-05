@@ -12,13 +12,13 @@ export  function SearchUser({ onUserSelect ,require}) {
 
     if (value.length > 1) {
       const res = await fetch(`http://localhost:8000/search/${require}?query=${value}`, {
- credentials: 'include' 
+      credentials: 'include' 
 });
       const data = await res.json();
       setUsers(data);
     } else {
       setUsers([]);
-    }
+    }                          
   };
 
   return (

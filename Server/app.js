@@ -11,7 +11,7 @@ import Rooms from './model/roomSchema.js';
 import MongoStore from 'connect-mongo';
 const userSocketMap = new Map(); 
 import sharedSession from 'express-socket.io-session';
-
+import Message from './model/MessageSchema.js'
 dotenv.config()
 const uri = process.env.MONGODBURI
 
@@ -173,6 +173,55 @@ app.post('/create-group',isAuthenticated, async (req,res)=>{
     res.send("error occured");
   }
 })
+// GET /messages?type=user&with=John&limit=20&offset=0
+app.get("/messages", isAuthenticated, async (req, res) => {
+  const { type,  peer, limit = 20, page = 0 } = req.query;
+  const username = req.session.username;
+   console.log(`${peer} is ${req.session.username} `)
+   let offset=(page-1)*limit;
+  const filter = {
+    type,
+    ...(type === 'user'                   
+      ? {
+          $or: [
+            { from: username,to: peer },
+            { from: peer, to: username }
+          ]
+        }
+      : { to: peer })
+  };
+  
+  try {
+    const messages = await Message.find(filter)
+      .sort({ timestamp: -1 }) 
+      .skip(parseInt(offset))
+      .limit(parseInt(limit))
+     .select('from to timestamp content -_id'); ;
+     console.log(`mee pa dokah ${messages}`)
+    res.json(messages.reverse()); 
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load messages' });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 io.use(sharedSession(mongosession, {
   autoSave: true
 }));
@@ -213,6 +262,14 @@ app.post("/checkroommembership",async (req,res)=>{
     return res.status(500).json({ error: 'Internal server error' });
   }
 })
+app.get('/home/me', (req, res) => {
+  if (req.session && req.session.username) {
+    res.json({ username: req.session.username });
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
+});
+
 app.post("/joinroom",async (req,res)=>{
   console.dir(req);
   const userId = req.session.username; 
@@ -239,7 +296,7 @@ io.on("connect",(socket)=>{
 
     userSocketMap.set(session.username, socket.id);
     socket.on('join-multiple-rooms', (groupList) => {
- // if(groupList!=null) groupList.forEach(groupId => socket.join(groupId));
+  if(groupList!=null) groupList.forEach(groupId => socket.join(groupId));
   console.log(`Socket ${socket.id} joined rooms: ${groupList}`);
   console.dir(groupList)
 });
@@ -276,7 +333,14 @@ io.on("connect",(socket)=>{
        chattedWithSet.add(msg.recv); 
     }
     
-      
+      const newMsg = new Message({
+       from: session.username,
+       to: msg.recv,
+       type,
+       content: msg.message
+     });
+
+    await newMsg.save();
       const toSocket = userSocketMap.get(msg.recv);
       if(!toSocket) return ;
       console.log(`toSocket:${toSocket}`);
@@ -287,9 +351,17 @@ io.on("connect",(socket)=>{
       })
       }}
       if(type=="group"){
+        const newMsg = new Message({
+       from: session.username,
+       to: msg.recv,
+       type,
+       content: msg.message
+     });
+
+    await newMsg.save();
         socket.to(msg.recv).emit('receiveMessage', {
           message:msg.message,
-          fromUser:session.username,
+          fromUser:msg.recv,
            
   });
   console.log("message is sent in room");
@@ -301,8 +373,8 @@ io.on("connect",(socket)=>{
         setInterval(() => {
           console.dir(session)    ;
           console.log("Session:", session);
-       console.log("User ID:", session.userId);
-        console.log("Username:", session.username);       
+          console.log("User ID:", session.userId);
+          console.log("Username:", session.username);       
         }, 100000000);
        
     })
