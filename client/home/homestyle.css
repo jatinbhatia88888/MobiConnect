@@ -8,47 +8,56 @@
 }
 
 /* Sidebar takes fixed width */
-.home-sidebar {
+/* .home-sidebar {
   width: 250px;
-  min-width: 70px; /* when collapsed */
+  min-width: 70px;
   height: 100%;
-}
+} */
 
 /* Main content holds search + chat */
 .home-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 90%;
   overflow: hidden;
 }
 
 /* Search stays on top */
 .home-search {
-  padding: 10px;
+  padding: 15px;
   margin:5px;
-  background-color: #1a1a1a;
-  z-index: 1;
+  width:100%;
+  background-color: #2c2f48;
+  flex-direction: row ;
+  display:flex;
+  /* z-index: 1; */
+  border-radius: 1em;
+  
 }
 
 /* Chat fills remaining space */
 .home-chat {
+  margin-left: 5px;
+  border-radius: 1em;
   flex: 1;
   flex-direction: column;
   width:100%;
   overflow: hidden;
+  background-color: #2c2f48;
 }
 
 /* Responsive: stack everything vertically */
 @media (max-width: 768px) {
   .home-container {
-    flex-direction: column;
+    flex-direction: row;
+    width:100%;
   }
 
-  .home-sidebar {
-    width: 100%;
+  /* .home-sidebar {
+    width:250px ;
     height: auto;
-  }
+  } */
 
   .home-main {
     height: auto;

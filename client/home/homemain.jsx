@@ -5,7 +5,7 @@ import { useState,useEffect } from 'react';
 import { AddGroupForm } from '../src/addgroup.jsx';
 
 import './homestyle.css'; // Link to the above CSS
-<link href="../src/styles.css" rel="stylesheet"></link>
+{/* <link href="../src/styles.css" rel="stylesheet"></link> */}
 export function Homepage() {
   const [peer,setPeer]=useState({peerInfo:"",type:"user"});
   const [refreshSidebar, setRefreshSidebar] = useState(false);
@@ -33,16 +33,16 @@ export function Homepage() {
         <div className="home-search">
         <SearchUser onUserSelect={setPeer} require="user" handleGroupAdded={handleGroupAdded}/>
         <SearchUser onUserSelect={setPeer} require="group" handleGroupAdded={handleGroupAdded}/>
-
+          <AddGroupForm onGroupCreated={handleGroupAdded} />
 
         </div>
+        
         <div className="home-chat">
           <ChatWindow toUser={peer} handleGroupAdded={handleGroupAdded} currentUser={currentUser} ></ChatWindow> 
         </div>
       </div>
-      <div>
-        <AddGroupForm onGroupCreated={handleGroupAdded} />
       </div>
-    </div>
+      
+    
   );
 }
