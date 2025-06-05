@@ -54,6 +54,8 @@ const io= new Server(server,{
 const isAuthenticated = (req, res, next) => {
   if (req.session.userId) return next();
   console.log(`Blocked: ${req.session.userId}`);
+  console.log("checking session object");
+  console.dir(req.session)
  res.status(400).json({ error: 'Query parameter is required.' })
 };
 app.get('/',isAuthenticated,(req,res)=>{
@@ -78,48 +80,79 @@ app.get("/search/group",isAuthenticated , async (req,res)=>{
   console.log(users);
   res.json(users)
 })
-app.post('/login', async (req,res)=>{
-   const name=req.body.name;
-   const email=req.body.email;
-   console.log(name);
-   console.log(email);
-   const user = await User.findOne({ email });
-   
+app.post('/login', async (req, res) => {
+  const name = req.body.name;
+  const email = req.body.email;
+  console.log(name);
+  console.log(email);
+
+  const user = await User.findOne({ email });
+
   if (!user || user.name !== name) {
     return res.redirect("http://localhost:5173/login");
   }
- 
- 
-  req.session.userId = user._id;
-  req.session.username=user.name;
-   req.session.save(err => {
-  if (err) {
-    console.error("Session save error:", err);
-    return res.redirect("http://localhost:5173/login");
+
+  req.session.regenerate((err) => {
+    if (err) {
+      return res.status(500).send("Session regeneration failed");
+    }
+
+    req.session.userId = user._id;
+    req.session.username = user.name;
+
+    req.session.save(err => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.redirect("http://localhost:5173/login");
+      }
+
+      res.redirect("http://localhost:5173/home");
+    });
+  });
+});
+
+
+
+app.post('/signup', async (req, res) => {
+  const name = req.body.name;
+  const email = req.body.email;
+
+  console.log(name);
+  console.log(email);
+
+  const inst = new User({
+    name: name,
+    email: email
+  });
+
+  try {
+    await inst.save();
+    console.log(inst);
+
+    req.session.regenerate((err) => {
+      if (err) {
+        return res.status(500).send("Session regeneration failed");
+      }
+
+      req.session.username = name;
+      req.session.userId = inst._id;
+
+      req.session.save(err => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("http://localhost:5173/login");
+        }
+
+        res.redirect("http://localhost:5173/home");
+      });
+    });
+
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.redirect("http://localhost:5173/login");
   }
-  res.redirect("http://localhost:5173/home");
+});
 
-
-})});
-
-app.post('/signup',(req,res)=>{
-    const name=req.body.name;
-   const email=req.body.email;
-   console.log(name);
-   console.log(email);
-   const inst=User();
-   try{
-   inst.email=email;
-   inst.name=name;
-   inst.save();
-   console.log(inst);
-   req.session.userId = inst._id;
-   res.redirect("http://localhost:5173/home")
-   }
-   catch(err){
-   res.redirect("http://localhost:5173/login")
-   }
-})
 app.post('/create-group',isAuthenticated, async (req,res)=>{
   
   try{
@@ -150,30 +183,75 @@ app.get("/chatuser",isAuthenticated,async (req,res)=>{
     console.log(` happy happy pls mahakal ${req.session.username}`)
     console.log(ans);                               
  console.log(ans.chattedWith);
+ if(ans==null) res.json(["startchatting "])
   res.json(ans.chattedWith);
 })
 app.get("/chatgroup",isAuthenticated,async (req,res)=>{
    
    const ans = await User.findOne({ name: req.session.username }, 'rooms');
    console.log(ans.rooms);
+   if(ans==null) res.json(["startchatting "])
    res.json(ans.rooms);
 })
 
+app.post("/checkroommembership",async (req,res)=>{
+  const userId = req.session.userId;
+  const  groupId  = req.body.groupname;
 
+  try {
+    const user = await User.findById(userId);
 
+    if (!user) {
+      return res.status(401).json({isMember:false,});
+    }
 
+    const isMember = user.rooms.includes(groupId);
+    return res.json({ isMember }); 
 
+  } catch (err) {
+    console.error("Membership check failed:", err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+})
+app.post("/joinroom",async (req,res)=>{
+  console.dir(req);
+  const userId = req.session.username; 
+   const  groupId  = req.body.groupname;
 
+  const user = await User.findOne({name:req.session.username});
+  if (!user.rooms.includes(groupId)) {
+    user.rooms.push(groupId);
+    
+    await user.save();
+  }
+  const room =await Rooms.findOne({name:groupId});
+  if(!room.members.includes(userId)){
+        room.members.push(userId);
+        await room.save();
+  }
+  res.json({ success: true });
 
+})
 
 io.on("connect",(socket)=>{
     const session = socket.handshake.session;
     console.dir(session);
+
     userSocketMap.set(session.username, socket.id);
+    socket.on('join-multiple-rooms', (groupList) => {
+ // if(groupList!=null) groupList.forEach(groupId => socket.join(groupId));
+  console.log(`Socket ${socket.id} joined rooms: ${groupList}`);
+  console.dir(groupList)
+});
+
     const chattedWithSet = new Set();
-    console.log("connection");
+    const roomSet=new Set();
+    // console.log("connection");
     socket.on("sendMessage",async (msg)=>{
+      let type=msg.type;
+      
       console.log(msg);
+      if(type==="user"){
       if (!chattedWithSet.has(msg.recv)) {
       const receiver = await User.findOne({ name: msg.recv });
       const sender = await User.findOne({ name: session.username});
@@ -207,8 +285,17 @@ io.on("connect",(socket)=>{
         message:msg.message,
         fromUser:session.username,
       })
+      }}
+      if(type=="group"){
+        socket.to(msg.recv).emit('receiveMessage', {
+          message:msg.message,
+          fromUser:session.username,
+           
+  });
+  console.log("message is sent in room");
       }
     })
+    
     socket.on('disconnect',()=>{
         console.log("client disconnected ");
         setInterval(() => {

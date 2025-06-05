@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./sidebar.css";
-
+import { socket } from './socket'; 
 export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
   const [open, setOpen] = useState(true);
   const [users, setUsers] = useState([]);
@@ -25,15 +25,26 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
       .catch((err)=>{
         console.log("no user ")
       });
-
+      
     fetch('http://localhost:8000/chatgroup', { credentials: 'include' })
-      .then(res => res.json())
-      .then(setGroups)
-      .catch((err)=>{
-        console.log("no group ")
-      });
-;
+  .then(res => res.json())
+  .then(groups => {
+    setGroups(groups);                    
+    socket.emit('join-multiple-rooms', groups); 
+  })
+  .catch(err => {
+    console.log("no group", err);
+  });
+
+      
+ 
+  
+
+
+
   }, [refreshTrigger])
+  
+
 
 
 
@@ -73,7 +84,7 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
                 // href={`/group/${group.toLowerCase().replace(/\s+/g, "-")}`}
                 onClick={(event)=>{
                   event.preventDefault();
-                  onUserSelect(user)
+                  onUserSelect({peerInfo:user,type:"user"})
                 }}
                  className="item-link">
                 {open ? user : user[0]}
@@ -93,7 +104,7 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
                 // href={`/group/${group.toLowerCase().replace(/\s+/g, "-")}`}
                 onClick={(event)=>{
                   event.preventDefault();
-                  onUserSelect(group)
+                  onUserSelect({peerInfo:group,type:"group"})
                 }}
                 className="item-link"
               >

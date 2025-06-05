@@ -6,7 +6,7 @@ import { AddGroupForm } from '../src/addgroup.jsx';
 import './homestyle.css'; // Link to the above CSS
 <link href="../src/styles.css" rel="stylesheet"></link>
 export function Homepage() {
-  const [peer,setPeer]=useState("");
+  const [peer,setPeer]=useState({peerInfo:"",type:"user"});
   const [refreshSidebar, setRefreshSidebar] = useState(false);
   const handleGroupAdded = () => {
     

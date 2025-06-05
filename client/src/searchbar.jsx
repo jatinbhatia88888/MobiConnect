@@ -32,7 +32,7 @@ export  function SearchUser({ onUserSelect ,require}) {
       {users.length > 0 && (
         <ul className="dropdown">
           {users.map(user => (
-            <li key={user.name} onClick={() => {onUserSelect(user.name),
+            <li key={user.name} onClick={() => {onUserSelect({peerInfo:user.name,type:require}),
               setUsers([])
             }}>
               {user.name}
