@@ -1,76 +1,159 @@
-.search-box{
-  width:15%;
-  flex-direction: row;
+.search-box {
+  width: 15%;
+  position: relative; /* Needed for dropdown absolute positioning */
+  display: flex;
+  flex-direction: column;
+  background-color: #2c2f48;
+  padding: 0.4em 0.6em;
   border-radius: 1em;
-  
-  height:100%;
-
-  /* margin-left:1em; */
+  margin-left: 1em;
   margin-right: 1em;
-  /* margin-top:0.08em; */
- 
-   border: 1px solid #4a90e2; }
+}
+
 .search-box input {
-  
   width: 100%;
-  height:100%;
-  border: none;
-  background-color:#363a5a;
+  height: 2.2em;
+  border: 1px solid transparent;
+  border-radius: 1em;
+  background-color: #363a5a;
   color: #fff;
-  border-color: white;
- border-radius: 1em;
-  
-  justify-content: center;
-  
+  padding: 0 0.8em;
+  font-size: 0.9em;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.search-box input:focus {
+  border: 1px solid #4a90e2;
+  background-color: #2c2f48;
 }
 
 .dropdown {
-  background: #333;
+  position: absolute;
+  top: 100%; /* Position just below input */
+  left: 0;
+  width: 100%;
+  background: #3e3f7a;
   color: white;
   list-style: none;
-  padding: 0;
-  margin: 0;
-  border: 1px solid #444;
-  display: flex;
-  justify-content: center;
+  padding: 0.2em;
+  margin-top: 0.3em;
+  border-radius: 1em;
+  border: 1px solid #4a90e2;
+  /* z-index: 99; */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .dropdown li {
-  padding: 10px;
+  padding: 0.6em 1em;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
+  background: #6466b8;
+  border-radius: 0.8em;
+  margin: 0.2em 0;
+  transition: background 0.2s;
+  text-align: center;
 }
 
 .dropdown li:hover {
-  background-color: #444;
-
+  background-color: #4a90e2;
 }
 
+/* .dropdown li:hover {
+  background-color: #444;
+
+} */
+
 .chat-window {
-  background: #2c2f48;
+  background: #1e2038;
   color: white;
-  padding: 10px;
   height: 100%;
   width: 100%;
-  /* display: flex;
-  justify-content: center; */
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .messages {
-  height:60px;
-  width: 250px;
-  padding: 5em;
-  overflow-x: auto;
-  margin-bottom: 10px;
+  flex: 1;
+  padding: 1em;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  background-color: #2c2f48; /* Chat background */
 }
+
+.messages p {
+  max-width: 70%;
+  padding: 0.6em 1em;
+  border-radius: 1.2em;
+  font-size: 0.95em;
+  line-height: 1.4;
+  word-wrap: break-word;
+  position: relative;
+}
+
 
 .messages p.me {
-  text-align: right;
-  color: #4caf50;
+  align-self: flex-end;
+  background-color: #5af15f;
+  color: white;
+  border-bottom-right-radius: 0;
 }
 
+
 .messages p.them {
-  text-align: left;
-  color: #f44336;
+  align-self: flex-start;
+  background-color: #2c2f48;
+  color: white;
+  border-bottom-left-radius: 0;
+}
+
+.typebar {
+  background-color: #1e2038;
+  display: flex;
+  justify-content: center;
+  padding: 0.8em 1em;
+  border-top: 1px solid #444;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+
+.typebar .inner-typebar {
+  width: 40%;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.typebar input {
+  flex: 1;
+  padding: 0.6em 1em;
+  border-radius: 1em;
+  background-color: #363a5a;
+  color: white;
+  border: 1px solid #555;
+  outline: none;
+}
+
+.typebar button {
+  padding: 0.6em 1.2em;
+  border-radius: 1em;
+  margin:1em;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.typebar button:hover {
+  background-color: #3a78c2;
+}
+
+
+.typebar button:hover {
+  background-color: #357ac9;
 }

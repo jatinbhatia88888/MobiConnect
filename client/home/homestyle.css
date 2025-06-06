@@ -1,6 +1,13 @@
+body{
+   margin: 0;
+  padding: 0;
+  background-color: #704d7e;
+}
+
 .home-container {
   display: flex;
   flex-direction: row;
+  
   height: 100vh;
   width: 100%;
   box-sizing: border-box;
@@ -19,15 +26,20 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  
   width: 90%;
   overflow: hidden;
+  margin:0;
+  padding:0
 }
 
 /* Search stays on top */
 .home-search {
   padding: 15px;
-  margin:5px;
+  margin:0px;
   width:100%;
+  margin-bottom: 5px;
+  margin-left: 5px;
   background-color: #2c2f48;
   flex-direction: row ;
   display:flex;

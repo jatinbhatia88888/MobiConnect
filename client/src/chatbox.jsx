@@ -103,18 +103,24 @@ const handleJoinGroup = () => {
           ))}
         </div>
         <div className="typebar">
+           <div className="inner-typebar">
           <input
             value={message}
             onChange={e => setMessage(e.target.value)}
             placeholder="Type a message..."
           />
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded" onClick={sendMessage}>Send</button>
+          </div>
+          <button className="" onClick={sendMessage}>Send</button>
         </div>
       </div>
     ) : (
+      <div className="chatbox">
+        <div className="typebar">
       <button onClick={handleJoinGroup}>
         Join Group to Chat
       </button>
+      </div>
+      </div>
     )
   );
 }

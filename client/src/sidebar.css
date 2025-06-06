@@ -11,6 +11,9 @@
   flex-direction: column;
   
   border-radius: 1em;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+
    z-index:5;
    display:inline-block;
 }
