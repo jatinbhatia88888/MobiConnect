@@ -12,6 +12,27 @@ import MongoStore from 'connect-mongo';
 const userSocketMap = new Map(); 
 import sharedSession from 'express-socket.io-session';
 import Message from './model/MessageSchema.js'
+import * as mediasoup from 'mediasoup'; 
+import os from 'os';
+import callRoom from './model/callroom.js';
+
+const mediaCodecs = [
+  {
+    kind: "audio",
+    mimeType: "audio/opus",
+    clockRate: 48000,
+    channels: 2,
+  },
+  {
+    kind: "video",
+    mimeType: "video/VP8",
+    clockRate: 90000,
+    parameters: {
+      "x-google-start-bitrate": 1000,
+    },
+  }
+];
+
 dotenv.config()
 const uri = process.env.MONGODBURI
 
@@ -156,7 +177,7 @@ app.post('/signup', async (req, res) => {
 app.post('/create-group',isAuthenticated, async (req,res)=>{
   
   try{
-    //console.dir(req);
+   
     const inst =new Rooms({
          name:req.body.groupname,
          admin:req.session.username,
@@ -173,7 +194,7 @@ app.post('/create-group',isAuthenticated, async (req,res)=>{
     res.send("error occured");
   }
 })
-// GET /messages?type=user&with=John&limit=20&offset=0
+
 app.get("/messages", isAuthenticated, async (req, res) => {
   const { type,  peer, limit = 20, page = 0 } = req.query;
   const username = req.session.username;
@@ -203,6 +224,34 @@ app.get("/messages", isAuthenticated, async (req, res) => {
     res.status(500).json({ error: 'Failed to load messages' });
   }
 });
+
+const mediasoupWorkers = [];
+
+const numCores = os.cpus().length; 
+const NUM_WORKERS = Math.min(numCores - 1, 4); 
+ async function initMediasoupWorkers() {
+  for (let i = 0; i < NUM_WORKERS; i++) {
+    const worker = await mediasoup.createWorker({
+      rtcMinPort: 2000 + i * 100,
+      rtcMaxPort: 2099 + i * 100,
+      logLevel: 'warn',
+    });
+
+    worker.on('died', () => {
+      console.error(`Worker ${i} died, exiting in 2 seconds`);
+      setTimeout(() => process.exit(1), 2000);
+    });
+
+    mediasoupWorkers.push(worker);
+  }
+}
+
+
+console.log("Media Soup Workers are:");
+console.dir(mediasoupWorkers);
+
+
+
 
 
 
@@ -242,6 +291,11 @@ app.get("/chatgroup",isAuthenticated,async (req,res)=>{
    if(ans==null) res.json(["startchatting "])
    res.json(ans.rooms);
 })
+
+
+
+
+
 
 app.post("/checkroommembership",async (req,res)=>{
   const userId = req.session.userId;
@@ -303,7 +357,7 @@ io.on("connect",(socket)=>{
 
     const chattedWithSet = new Set();
     const roomSet=new Set();
-    // console.log("connection");
+   
     socket.on("sendMessage",async (msg)=>{
       let type=msg.type;
       
@@ -367,19 +421,360 @@ io.on("connect",(socket)=>{
   console.log("message is sent in room");
       }
     })
+
     
-    socket.on('disconnect',()=>{
-        console.log("client disconnected ");
-        setInterval(() => {
-          console.dir(session)    ;
-          console.log("Session:", session);
-          console.log("User ID:", session.userId);
-          console.log("Username:", session.username);       
-        }, 100000000);
-       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const rooms = new Map();
+
+socket.on('join-call-room', async ({ roomName }, callback) => {
+  if (!rooms.has(roomName)) {
+    const worker = mediasoupWorkers[0]; 
+    console.dir(mediasoupWorkers)
+    const router = await worker.createRouter({ mediaCodecs });
+    rooms.set(roomName, { router, peers: new Map() });
+  }
+
+  const room = rooms.get(roomName);
+  room.peers.set(socket.id, { transports: [], producers: [], consumers: [] });
+  
+  callback({ routerRtpCapabilities: room.router.rtpCapabilities });
+});
+   
+socket.on('createProducerTransport', async ({ roomName }, callback) => {
+  console.log(`room name is ${roomName}`)
+  const room = rooms.get(roomName);
+  const transport = await room.router.createWebRtcTransport({ listenIps: [{ ip: '0.0.0.0', announcedIp: null }], 
+  enableUdp: true,
+  enableTcp: true,
+  preferUdp: true,
+  initialAvailableOutgoingBitrate: 1000000 });
+
+  room.peers.get(socket.id).transports.push(transport);
+  transport.observer.once('close', () => {
+    room.peers.get(socket.id).transports = room.peers.get(socket.id).transports.filter(t => t !== transport);
+  });
+
+  callback({
+    id: transport.id,
+    iceParameters: transport.iceParameters,
+    iceCandidates: transport.iceCandidates,
+    dtlsParameters: transport.dtlsParameters
+  });
+
+  socket.on('connectProducerTransport', ({ dtlsParameters }, ack) => {
+    transport.connect({ dtlsParameters });
+    ack();
+  });
+
+
+socket.on('produce', async ({ kind, rtpParameters }, callback) => {
+ 
+  try{
+    const producer = await transport.produce({ kind, rtpParameters });
+
+    const peer = room.peers.get(socket.id);
+    if (!peer) return callback({ error: 'Peer not found in room' });
+    peer.producers = peer.producers || [];
+    peer.producers.push(producer);
+
+    producer.on('transportclose', () => {
+      peer.producers = peer.producers.filter(p => p.id !== producer.id);
     })
+
+    callback({ id: producer.id });
+
+    
+    for (const [otherSocketId] of room.peers.entries()) {
+      if (otherSocketId !== socket.id) {
+        const otherSocket = io.sockets.sockets.get(otherSocketId);
+        if (otherSocket) {
+          otherSocket.emit('new-producer', {
+            producerSocketId: socket.id,
+            producerId: producer.id,
+            kind
+          });
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error('produce error:', error);
+    callback({ error: error.message });
+  }
+});
+});
+    socket.on("connectConsumerTransport", async ({ dtlsParameters }, callback) => {
+  const peer = rooms.peers.get(socket.id);
+  const transport = peer.consumerTransport;
+  await transport.connect({ dtlsParameters });
+  callback();
+});
+
+socket.on("createConsumerTransport", async ({ roomName }, callback) => {
+  const room = rooms.get(roomName);
+  if (!room) return callback({ error: "Room not found" });
+
+  const peer = room.peers.get(socket.id);
+  if (!peer) return callback({ error: "Peer not found" });
+
+  try {
+    const transport = await room.router.createWebRtcTransport({
+      listenIps: [{ ip: "127.0.0.1", announcedIp: null }], 
+      enableUdp: true,
+      enableTcp: true,
+      preferUdp: true,
+    });
+
+    
+    peer.consumerTransport = transport;
+
+    transport.on("dtlsstatechange", (state) => {
+      if (state === "closed") transport.close();
+    });
+
+    transport.on("close", () => {
+      console.log("Consumer transport closed for", socket.id);
+    });
+
+    callback({
+      id: transport.id,
+      iceParameters: transport.iceParameters,
+      iceCandidates: transport.iceCandidates,
+      dtlsParameters: transport.dtlsParameters,
+    });
+  } catch (err) {
+    console.error("Failed to create consumer transport", err);
+    callback({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  socket.on('consume', async ({ producerSocketId, kind, roomName }, callback) => {
+  const room = rooms.get(roomName);
+  const producerPeer = room.peers.get(producerSocketId);
+  const producer = producerPeer.producers.find(p => p.kind === kind);
+
+  const consumer = await socket.consumerTransport.consume({
+    producerId: producer.id,
+    rtpCapabilities: room.router.rtpCapabilities,
+    paused: false
+  });
+
+  room.peers.get(socket.id).consumers.push(consumer);
+
+  callback({
+    id: consumer.id,
+    producerId: producer.id,
+    kind: consumer.kind,
+    rtpParameters: consumer.rtpParameters
+  });
+});
+
+
+  socket.on("start-video-call", ({ room, to, type }) => {
+  const from = socket.handshake.session.username;
+
+  if (type === "user") {
+    const toSocketId = userSocketMap.get(to);
+    if (toSocketId) {
+      io.to(toSocketId).emit("incoming-video-call", { room, from, type });
+    }
+  } else if (type === "group") {
+    socket.to(to).emit("incoming-video-call", { room, from, type });
+  }
+});
+
+
+
+
+  socket.on("join-room", ({ roomName }) => {
+  const username = socket.handshake.session.username;
+  if (roomName.startsWith("user-")) {
+    const [, user1, user2] = roomName.split("-");
+    if (![user1, user2].includes(username)) {
+      socket.emit("unauthorized");
+      return;
+    }
+  }
+
+  socket.join(roomName);
+  socket.on('disconnect', () => {
+  rooms.forEach((room, roomName) => {
+    const peer = room.peers.get(socket.id);
+    if (!peer) return;
+
+    peer.transports.forEach(t => t.close());
+    peer.producers.forEach(p => p.close());
+    peer.consumers.forEach(c => c.close());
+
+    room.peers.delete(socket.id);
+
+    if (room.peers.size === 0) {
+      room.router.close();
+      rooms.delete(roomName);
+    }
+  });
+});
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // socket.on('disconnect',()=>{
+    //     console.log("client disconnected ");
+    //     setInterval(() => {
+    //       console.dir(session)    ;
+    //       console.log("Session:", session);
+    //       console.log("User ID:", session.userId);
+    //       console.log("Username:", session.username);       
+    //     }, 100000000);
+       
+    // })
    
 });
-server.listen("8000",()=>{
-    console.log("this is mahakal ki help")
-})
+
+
+
+
+
+
+
+
+
+
+
+
+async function startServer() {
+  await initMediasoupWorkers(); 
+
+  server.listen(8000, () => {
+    console.log("🚀 Server is running on port 8000 (Mahakal ki help)");
+  });
+}
+startServer().catch((err) => {
+  console.error("❌ Failed to start server:", err);
+  
+});

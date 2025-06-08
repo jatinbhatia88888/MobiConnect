@@ -3,20 +3,43 @@ import { socket } from './socket';
 import './home.css' ;
  <link href="./src/styles.css" rel="stylesheet"></link>
 export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
-  const t=toUser;
+  
   const [isMember, setIsMember] = useState(true);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const messagesRef = useRef(null);
-   const handleScroll = (e) => {
+  const [incomingCall, setIncomingCall] = useState(null);
+   
+
+const handleScroll = (e) => {
   if (e.target.scrollTop === 0 && hasMore) {
     const next = page + 1;
     setPage(next);
     fetchMessages();
   }
 };
+
+
+useEffect(() => {
+    socket.on('incoming-video-call', ({ room, from }) => {
+      setIncomingCall({ room, from });
+    });
+
+    return () => {
+      socket.off('incoming-video-call');
+    };
+  }, []);
+
+const acceptCall = () => {
+    window.location.href = `/video?room=${incomingCall.room}`;
+    setIncomingCall(null);
+  };
+
+const rejectCall = () => {
+    setIncomingCall(null);
+  };
 
   const sendMessage = () => {
     socket.emit('sendMessage', {
@@ -41,7 +64,7 @@ export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
   setHasMore(data.length === 20);
 };
 
-
+   
   
 
   useEffect(() => {
@@ -83,19 +106,48 @@ const handleJoinGroup = () => {
       if (res.ok) {
         setIsMember(true);
         handleGroupAdded()
-       socket.emit('join-group', toUser.peerInfo); // join socket room
+       socket.emit('join-group', toUser.peerInfo); 
       } else {
         alert('Failed to join group');
       }
     });                                    
 };
 
+function getRoomName(type, currentUser, targetName) {
+  if (type === "group") return `group-${targetName}`;
+  const sorted = [currentUser, targetName].sort();
+  return `user-${sorted[0]}-${sorted[1]}`;
+}
+
+function handleVideoCall(type, targetName) {
+ 
+  const room = getRoomName(toUser.type, currentUser, toUser.peerInfo);
+
+  socket.emit("start-video-call", { room, to: toUser.peerInfo, type:toUser.type ,});
+
+  
+  window.location.href = `/video?room=${room}`;
+}
+
+// socket.on("start-video-call", ({ room }) => {
+//   window.location.href = `/video?room=${room}`;
+// });
+
+ 
+
+
+
 
 
   return (
+    
     isMember ? (
       <div className="chat-window">
         <h3>Chat with {toUser.peerInfo}</h3>
+        <button onClick={() => handleVideoCall(toUser.type, toUser.peerInfo)}>
+       Start Video Call
+        </button>
+          
         <div className="messages" onScroll={handleScroll} ref={messagesRef} style={{ height: '300px', overflowY: 'auto' }} >
 
           {messages.map((m, idx) => (
@@ -111,6 +163,13 @@ const handleJoinGroup = () => {
           />
           </div>
           <button className="" onClick={sendMessage}>Send</button>
+         {incomingCall && (
+        <div className="incoming-call-popup" style={popupStyle}>
+          <p>Incoming call from <b>{incomingCall.from}</b></p>
+          <button onClick={acceptCall} style={btnStyle}>Accept</button>
+          <button onClick={rejectCall} style={btnStyle}>Reject</button>
+        </div>
+      )}
         </div>
       </div>
     ) : (
@@ -120,7 +179,9 @@ const handleJoinGroup = () => {
         Join Group to Chat
       </button>
       </div>
+      
       </div>
+      
     )
   );
 }

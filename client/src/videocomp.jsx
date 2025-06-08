@@ -3,6 +3,7 @@ import { Device } from 'mediasoup-client';
 import { socket } from './socket';
 
 export function VideoRoom({ roomName }) {
+  console.log(roomName)
   const localVideoRef = useRef(null);
   const [remoteStreams, setRemoteStreams] = useState({});
   const [mediaStream, setMediaStream] = useState(null);
@@ -21,15 +22,15 @@ export function VideoRoom({ roomName }) {
 
       const newDevice = new Device();
       const { routerRtpCapabilities } = await new Promise(resolve =>
-        socket.emit('getRtpCapabilities', {}, resolve)
+        socket.emit('join-call-room', {roomName:roomName}, resolve)
       );
       await newDevice.load({ routerRtpCapabilities });
       setDevice(newDevice);
 
       socket.emit('join-room', { roomName });
-
+      console.log(`join room `)
       
-      socket.emit('createProducerTransport', {}, async ({ params }) => {
+      socket.emit('createProducerTransport', {roomName:roomName}, async ({ params }) => {
         const sendTransport = newDevice.createSendTransport(params);
         sendTransport.on('connect', ({ dtlsParameters }, callback) => {
           socket.emit('connectProducerTransport', { dtlsParameters }, callback);
@@ -56,16 +57,17 @@ export function VideoRoom({ roomName }) {
           }
         });
       });
+       
 
       
-      socket.on('new-producer', async ({ socketId, kind }) => {
+      socket.on('new-producer', async ({ producerId,producersocketId:socketId, kind }) => {
         consumeTrack(consumerTransport, socketId, kind);
       });
     };
 
     const consumeTrack = async (transport, producerSocketId, kind) => {
       if (!transport) return;
-      socket.emit('consume', { producerSocketId, kind }, async ({ id, rtpParameters }) => {
+      socket.emit('consume', { producerSocketId, kind ,roomName}, async ({ id, rtpParameters }) => {
         const consumer = await transport.consume({ id, kind, rtpParameters });
         setRemoteStreams(prev => {
           const current = prev[producerSocketId] || new MediaStream();
