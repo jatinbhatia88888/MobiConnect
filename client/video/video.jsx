@@ -5,9 +5,9 @@ const query = new URLSearchParams(window.location.search);
     const roomName = query.get("room");
     // const roomName="alloo"
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ 
     
 
     <VideoRoom roomName={roomName}></VideoRoom>
-  </StrictMode>
+ 
 )

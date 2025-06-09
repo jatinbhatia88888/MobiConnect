@@ -129,9 +129,6 @@ function handleVideoCall(type, targetName) {
   window.location.href = `/video?room=${room}`;
 }
 
-// socket.on("start-video-call", ({ room }) => {
-//   window.location.href = `/video?room=${room}`;
-// });
 
  
 
@@ -164,10 +161,10 @@ function handleVideoCall(type, targetName) {
           </div>
           <button className="" onClick={sendMessage}>Send</button>
          {incomingCall && (
-        <div className="incoming-call-popup" style={popupStyle}>
+        <div className="incoming-call-popup" >
           <p>Incoming call from <b>{incomingCall.from}</b></p>
-          <button onClick={acceptCall} style={btnStyle}>Accept</button>
-          <button onClick={rejectCall} style={btnStyle}>Reject</button>
+          <button onClick={acceptCall} >Accept</button>
+          <button onClick={rejectCall} >Reject</button>
         </div>
       )}
         </div>

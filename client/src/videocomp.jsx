@@ -28,12 +28,12 @@ export function VideoRoom({ roomName }) {
       setDevice(newDevice);
 
       socket.emit('join-room', { roomName });
-      console.log(`join room `)
+      console.log(`joined room `)
       
-      socket.emit('createProducerTransport', {roomName:roomName}, async ({ params }) => {
+      socket.emit('createProducerTransport', {roomName:roomName}, async ( params ) => {
         const sendTransport = newDevice.createSendTransport(params);
-        sendTransport.on('connect', ({ dtlsParameters }, callback) => {
-          socket.emit('connectProducerTransport', { dtlsParameters }, callback);
+        sendTransport.on('connect', ({ dtlsParameters }, callback,errback) => {
+          socket.emit('connectProducerTransport', { dtlsParameters },()=>{ callback()});
         });
         sendTransport.on('produce', ({ kind, rtpParameters }, callback) => {
           socket.emit('produce', { kind, rtpParameters }, ({ id }) => callback({ id }));
@@ -41,34 +41,33 @@ export function VideoRoom({ roomName }) {
         stream.getTracks().forEach(track => sendTransport.produce({ track }));
       });
 
-     
-      socket.emit('createConsumerTransport', {}, async ({ params }) => {
-        const recvTransport = newDevice.createRecvTransport(params);
+       let recvTransport;
+      socket.emit('createConsumerTransport', {roomName:roomName}, async ( params ) => {
+         recvTransport = newDevice.createRecvTransport(params);
         setConsumerTransport(recvTransport);
         recvTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
-          socket.emit('connectConsumerTransport', { dtlsParameters }, res => {
+          socket.emit('connectConsumerTransport', { dtlsParameters,roomName }, res => {
             if (res?.error) errback(res.error); else callback();
           });
         });
 
-        socket.emit('getProducers', {}, async ({ producers }) => {
+        socket.emit('getProducers', {roomName}, async ({ producers }) => {
           for (const { producerSocketId, kind } of producers) {
             consumeTrack(recvTransport, producerSocketId, kind);
           }
         });
       });
-       
-
-      
-      socket.on('new-producer', async ({ producerId,producersocketId:socketId, kind }) => {
-        consumeTrack(consumerTransport, socketId, kind);
+        
+      socket.on('new-producer', async ({  producerSocketId: socketId, producerId, kind  }) => {
+        console.log("New producer received:", socketId, kind);
+        consumeTrack(recvTransport, socketId, kind);
       });
     };
 
     const consumeTrack = async (transport, producerSocketId, kind) => {
       if (!transport) return;
-      socket.emit('consume', { producerSocketId, kind ,roomName}, async ({ id, rtpParameters }) => {
-        const consumer = await transport.consume({ id, kind, rtpParameters });
+      socket.emit('consume', { producerSocketId, kind ,roomName}, async ({ id,producerId, rtpParameters }) => {
+        const consumer = await transport.consume({ id, kind,producerId, rtpParameters });
         setRemoteStreams(prev => {
           const current = prev[producerSocketId] || new MediaStream();
           current.addTrack(consumer.track);
@@ -116,7 +115,7 @@ export function VideoRoom({ roomName }) {
     const track = screenStream.getVideoTracks()[0];
     setScreenTrack(track);
 
-    socket.emit('createScreenTransport', {}, async ({ params }) => {
+    socket.emit('createScreenTransport', {}, async ( params ) => {
       const transport = device.createSendTransport(params);
       setScreenTransport(transport);
 
