@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
 import { socket } from './socket';
-
+import { RemoteVideo } from './remotevideo';
 export function VideoRoom({ roomName }) {
   console.log(roomName)
   const localVideoRef = useRef(null);
@@ -33,10 +33,10 @@ export function VideoRoom({ roomName }) {
       socket.emit('createProducerTransport', {roomName:roomName}, async ( params ) => {
         const sendTransport = newDevice.createSendTransport(params);
         sendTransport.on('connect', ({ dtlsParameters }, callback,errback) => {
-          socket.emit('connectProducerTransport', { dtlsParameters },()=>{ callback()});
+          socket.emit('connectProducerTransport', { dtlsParameters ,roomName},()=>{ callback()});
         });
         sendTransport.on('produce', ({ kind, rtpParameters }, callback) => {
-          socket.emit('produce', { kind, rtpParameters }, ({ id }) => callback({ id }));
+          socket.emit('produce', { kind, rtpParameters,roomName }, ({ id }) => callback({ id }));
         });
         stream.getTracks().forEach(track => sendTransport.produce({ track }));
       });
@@ -51,23 +51,26 @@ export function VideoRoom({ roomName }) {
           });
         });
 
-        socket.emit('getProducers', {roomName}, async ({ producers }) => {
-          for (const { producerSocketId, kind } of producers) {
-            consumeTrack(recvTransport, producerSocketId, kind);
+        socket.emit('getProducers', {roomName}, async ( {producers} ) => {
+          for (const { producerSocketId,producerId, kind } of producers) {
+            console.log(`username is id is ${producerId}`)
+            consumeTrack(recvTransport, producerSocketId, kind,producerId);
           }
         });
+          socket.on('new-producer', async ({  producerSocketId: socketId, producerId, kind  }) => {
+        console.log("New producer received:", socketId, kind,producerId);
+        consumeTrack(recvTransport, socketId, kind,producerId);
+      });
       });
         
-      socket.on('new-producer', async ({  producerSocketId: socketId, producerId, kind  }) => {
-        console.log("New producer received:", socketId, kind);
-        consumeTrack(recvTransport, socketId, kind);
-      });
+    
     };
 
-    const consumeTrack = async (transport, producerSocketId, kind) => {
+    const consumeTrack = async (transport, producerSocketId, kind,producerId) => {
       if (!transport) return;
-      socket.emit('consume', { producerSocketId, kind ,roomName}, async ({ id,producerId, rtpParameters }) => {
-        const consumer = await transport.consume({ id, kind,producerId, rtpParameters });
+      socket.emit('consume', { producerSocketId, kind ,roomName,producerId}, async ({ id,producerId, rtpParameters }) => {
+        const consumer = await transport.consume({ id, kind,producerId, rtpParameters, paused: true });
+         socket.emit('resumeConsumer', { consumerId: consumer.id ,roomName});
         setRemoteStreams(prev => {
           const current = prev[producerSocketId] || new MediaStream();
           current.addTrack(consumer.track);
@@ -140,7 +143,7 @@ export function VideoRoom({ roomName }) {
   return (
     <div className="video-call">
       <div className="local-container">
-        <video ref={localVideoRef} autoPlay muted className="local-video" />
+        <video ref={localVideoRef} autoPlay  className="local-video" />
         <div className="controls">
           <button onClick={toggleVideo}>{isVideoEnabled ? 'Turn Off Video' : 'Turn On Video'}</button>
           <button onClick={toggleAudio}>{isAudioEnabled ? 'Mute' : 'Unmute'}</button>
@@ -150,8 +153,9 @@ export function VideoRoom({ roomName }) {
 
       <div className="remote-videos">
         {Object.entries(remoteStreams).map(([id, stream]) => (
-          <video key={id} autoPlay playsInline className="remote-video" ref={el => el && (el.srcObject = stream)} />
-        ))}
+          
+  <RemoteVideo key={id} stream={stream} />
+))}
       </div>
 
       <style>{`
