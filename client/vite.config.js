@@ -13,6 +13,7 @@ export default defineConfig({
         home: path.resolve(__dirname, 'home.html'),
         signup:path.resolve(__dirname,'signup.html'),
         video:path.resolve(__dirname,'video.html'),
+        profile:path.resolve(__dirname,'profile.html'),
       }
     }
   },

@@ -13,9 +13,11 @@ const userSocketMap = new Map();
 import sharedSession from 'express-socket.io-session';
 import Message from './model/MessageSchema.js'
 import * as mediasoup from 'mediasoup'; 
+
+import { v2 as cloudinary } from 'cloudinary';
 import os from 'os';
 import callRoom from './model/callroom.js';
-
+import createUploadRoute from './routes/upload.js'
 const mediaCodecs = [
   {
     kind: "audio",
@@ -217,7 +219,7 @@ app.get("/messages", isAuthenticated, async (req, res) => {
       .sort({ timestamp: -1 }) 
       .skip(parseInt(offset))
       .limit(parseInt(limit))
-     .select('from to timestamp content -_id'); ;
+     .select('from to timestamp content contenttype -_id'); ;
      console.log(`mee pa dokah ${messages}`)
     res.json(messages.reverse()); 
   } catch (err) {
@@ -245,6 +247,7 @@ const NUM_WORKERS = Math.min(numCores - 1, 4);
     mediasoupWorkers.push(worker);
   }
 }
+
 
 
 console.log("Media Soup Workers are:");
@@ -391,6 +394,7 @@ io.on("connect",(socket)=>{
        from: session.username,
        to: msg.recv,
        type,
+      contenttype:'text',
        content: msg.message
      });
 
@@ -402,6 +406,9 @@ io.on("connect",(socket)=>{
       io.to(toSocket).emit('receiveMessage',{
         message:msg.message,
         fromUser:session.username,
+
+        contenttype:'text',
+        timestamp:newsg.timestamp,
       })
       }}
       if(type=="group"){
@@ -409,13 +416,16 @@ io.on("connect",(socket)=>{
        from: session.username,
        to: msg.recv,
        type,
-       content: msg.message
+       content: msg.message,
+       contenttype:'text',
+       
      });
 
     await newMsg.save();
         socket.to(msg.recv).emit('receiveMessage', {
           message:msg.message,
           fromUser:msg.recv,
+          timestamp:newMsg.timestamp,
            
   });
   console.log("message is sent in room");
@@ -748,7 +758,7 @@ socket.on('resumeConsumer', async ({ consumerId,roomName }) => {
 
 
 
-
+app.use('/home', createUploadRoute(io, userSocketMap));
 
 
 

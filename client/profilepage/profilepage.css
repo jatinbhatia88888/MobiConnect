@@ -1,0 +1,154 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* Base styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+  background-color: #0a1f35;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+.profile-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  color: #fff;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+.profile-left {
+  flex: 1;
+  background: linear-gradient(180deg, #1f2937, #111827);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  flex-direction: column;
+  text-align: center;
+}
+
+.branding .logo-img {
+  width: 80px;
+  margin-bottom: 1rem;
+}
+
+.branding h1 {
+  font-size: 2rem;
+  color: #a3b3ff;
+}
+
+.branding p {
+  font-size: 1.1rem;
+  color: #ccc;
+  margin-top: 0.5rem;
+}
+
+.profile-right {
+  flex: 1;
+  background: #f4f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 2rem;
+  color: #333;
+  position: relative;
+}
+
+.page-title {
+  font-size: 1.6rem;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  color: #4f46e5;
+  text-align: center;
+}
+
+.profile-box {
+  background: #fff;
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.profile-box input[type="text"],
+.profile-box input[type="file"] {
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.profile-box button {
+  padding: 0.8rem;
+  background: #4f46e5;
+  color: white;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s ease;
+}
+
+.profile-box button:hover {
+  background: #5f56f5;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .profile-left,
+  .profile-right {
+    width: 100%;
+    flex: none;
+  }
+
+  .profile-box {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .branding h1 {
+    font-size: 1.6rem;
+  }
+
+  .branding p {
+    font-size: 0.95rem;
+  }
+
+  .profile-box {
+    padding: 1.5rem 1rem;
+  }
+
+  .page-title {
+    font-size: 1.3rem;
+  }
+
+  .profile-box input,
+  .profile-box button {
+    font-size: 0.95rem;
+    padding: 0.7rem;
+  }
+}

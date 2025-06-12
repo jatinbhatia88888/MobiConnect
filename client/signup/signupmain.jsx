@@ -1,5 +1,5 @@
-import {Form} from '../src/lsform.jsx'
+import {SignUp} from './signupele.jsx'
 export function Loginpage(){
-      return (<Form  url="http://localhost:8000/signup">
-            </Form>)
+      return (<SignUp  url="http://localhost:8000/signup">
+            </SignUp>)
 }

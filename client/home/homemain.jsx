@@ -3,7 +3,7 @@ import { SearchUser } from '../src/searchbar.jsx';
 import { ChatWindow } from '../src/chatbox.jsx';
 import { useState,useEffect } from 'react';
 import { AddGroupForm } from '../src/addgroup.jsx';
-
+import { Attachment } from '../src/Attachment.jsx';
 import './homestyle.css'; // Link to the above CSS
 {/* <link href="../src/styles.css" rel="stylesheet"></link> */}
 export function Homepage() {

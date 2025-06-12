@@ -1,5 +1,6 @@
 import React, { useState, useEffect ,useRef} from 'react';
 import { socket } from './socket'; 
+import { Attachment } from './Attachment.jsx';
 import './home.css' ;
  <link href="./src/styles.css" rel="stylesheet"></link>
 export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
@@ -45,12 +46,13 @@ const rejectCall = () => {
     socket.emit('sendMessage', {
       recv: toUser.peerInfo,
       type:toUser.type,
+      contenttype:'text',
       message,
     });
     if (messagesRef.current) {
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }
-    setMessages(prev => [...prev, { content:message, to:toUser.peerInfo ,from:currentUser}]);
+    setMessages(prev => [...prev, { content:message, to:toUser.peerInfo ,from:currentUser,contenttype:'text',timestamp:new Date()}]);
     setMessage('');
   };
 
@@ -68,10 +70,10 @@ const rejectCall = () => {
   
 
   useEffect(() => {
-    socket.on('receiveMessage', ({ message, fromUser }) => {
+    socket.on('receiveMessage', ({ message, fromUser,contenttype,timestamp }) => {
       console.log(message);
       if (fromUser === toUser.peerInfo) {
-        setMessages(prev => [...prev, { message, from: toUser.peerInfo ,to:currentUser }]);
+        setMessages(prev => [...prev, { content: message, from: toUser.peerInfo ,to:currentUser,contenttype:contenttype ,timestamp}]);
       }
     });
     setMessages([]);
@@ -147,11 +149,60 @@ function handleVideoCall(type, targetName) {
           
         <div className="messages" onScroll={handleScroll} ref={messagesRef} style={{ height: '300px', overflowY: 'auto' }} >
 
-          {messages.map((m, idx) => (
-            <p key={idx} className={m.from==currentUser ? 'me' : 'them'}>{m.content}</p>
-          ))}
+          {messages.map((m, idx) => {
+    const isMe = m.from === currentUser;
+    const localKey = `downloaded-${m.url}`;
+    const alreadyDownloaded = localStorage.getItem(localKey) === 'true';
+    const timestamp = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const handleDownload = () => {
+      const a = document.createElement('a');
+      a.href = m.url;
+      a.download = m.content;
+      a.click();
+      localStorage.setItem(localKey, 'true');
+    };
+
+    const handleOpen = () => {
+      window.open(m.url, '_blank');
+    };
+
+    return (
+      <div key={idx} className={`message-bubble ${isMe ? 'me' : 'them'}`}>
+        {m.contenttype === 'text' && <p>{m.content}</p>}
+
+        {m.contenttype === 'img' && (
+          <div
+            className="media-container"
+            onClick={alreadyDownloaded ? handleOpen : handleDownload}
+          >
+            <img src={m.url} alt={m.content} />
+            <div className="download-status">
+              {alreadyDownloaded ? '✔️ Downloaded' : '📥 Tap to download'}
+            </div>
+          </div>
+        )}
+
+        {m.contenttype === 'file' && (
+          <div
+            className="file-preview"
+            onClick={alreadyDownloaded ? handleOpen : handleDownload}
+          >
+            <span className="filename">📄 {m.content}</span>
+            <span className="status">
+              {alreadyDownloaded ? '✔️ Downloaded' : '📥 Tap to download'}
+            </span>
+          </div>
+        )}
+
+        <div className="timestamp">{timestamp}</div>
+      </div>
+    );
+  })}
         </div>
+        
         <div className="typebar">
+          
            <div className="inner-typebar">
           <input
             value={message}
@@ -159,6 +210,7 @@ function handleVideoCall(type, targetName) {
             placeholder="Type a message..."
           />
           </div>
+
           <button className="" onClick={sendMessage}>Send</button>
          {incomingCall && (
         <div className="incoming-call-popup" >

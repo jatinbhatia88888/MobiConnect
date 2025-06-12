@@ -104,7 +104,7 @@
 
 .messages p.them {
   align-self: flex-start;
-  background-color: #2c2f48;
+  background-color: #e073e4;
   color: white;
   border-bottom-left-radius: 0;
 }
@@ -156,4 +156,87 @@
 
 .typebar button:hover {
   background-color: #357ac9;
+}
+.message-bubble {
+  max-width: 75%;
+  padding: 3px 4px;
+  border-radius: 12px;
+  font-size: 14px;
+  word-break: break-word;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.me {
+  align-self: flex-end;
+  background-color: #90e967;
+  color: white;
+  border-bottom-right-radius: 0;
+}
+
+.them {
+   align-self: flex-start;
+  background-color: #613463;
+  color: white;
+  border-bottom-left-radius: 0;
+}
+
+.media-container {
+  cursor: pointer;
+  text-align: center;
+}
+
+.media-container img {
+  max-width: 30%;
+  max-height: 200px;
+  border-radius: 10px;
+  transition: opacity 0.2s;
+}
+
+.download-status {
+  font-size: 0.75em;
+  color: #555;
+  margin-top: 4px;
+}
+
+.file-preview {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.file-preview:hover {
+  background-color: #e9e9e9;
+}
+
+.filename {
+  font-weight: 600;
+}
+
+.status {
+  font-size: 0.8em;
+  color: #666;
+}
+
+.timestamp {
+  font-size: 11px;
+  color: #888;
+  margin-top: 1px;
+  text-align: right;
+}
+
+/* Responsive */
+@media screen and (max-width: 600px) {
+  .message-bubble {
+    max-width: 90%;
+    font-size: 13px;
+  }
+
+  .media-container img {
+    max-height: 150px;
+  }
 }
