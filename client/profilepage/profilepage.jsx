@@ -1,17 +1,27 @@
-// ProfileSetup.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './profilepage.css';
 
 export function ProfileSetup() {
   const [username, setUsername] = useState('');
   const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Username:', username);
     console.log('Image:', image);
-    // Handle the data or send it to your backend
+    // Send image + username to backend
   };
+
+  // Generate preview when image changes
+  useEffect(() => {
+    if (!image) return;
+    const objectUrl = URL.createObjectURL(image);
+    setPreview(objectUrl);
+
+    // Clean up on unmount
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [image]);
 
   return (
     <div className="profile-wrapper">
@@ -28,6 +38,14 @@ export function ProfileSetup() {
           <h2 className="page-title">Profile Setup</h2>
           <div className="profile-box">
             <form onSubmit={handleSubmit}>
+              
+              {/* Show preview if available */}
+              {preview && (
+                <div className="photo-preview">
+                  <img src={preview} alt="Preview" className="preview-img" />
+                </div>
+              )}
+
               <input
                 type="text"
                 placeholder="Enter Username"

@@ -19,7 +19,7 @@ export function Homepage() {
       credentials: "include"
     })
       .then(res => res.json())
-      .then(data => setCurrentUser(data.username))
+      .then(data => {setCurrentUser(data.username),setPeer({peerInfo:data.username,type:peer.type})})
       .catch(err => console.error("Failed to fetch current user:", err));
   }, []);
   
@@ -36,6 +36,7 @@ export function Homepage() {
           <AddGroupForm onGroupCreated={handleGroupAdded} />
 
         </div>
+        
         
         <div className="home-chat">
           <ChatWindow toUser={peer} handleGroupAdded={handleGroupAdded} currentUser={currentUser} ></ChatWindow> 

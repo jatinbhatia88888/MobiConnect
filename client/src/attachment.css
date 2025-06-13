@@ -1,62 +1,61 @@
 .attachment-wrapper {
   position: relative;
-  display: inline-block;
-  margin-left: 10px;
-}
-
-.attach-btn {
-  position: relative;
-  top: -8px; /* move it up */
-  right: -5px; /* slight right */
-  background-color: #4a90e2;
-  border: none;
-  border-radius: 12px;
-  padding: 10px;
-  color: #000;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.attachment-popup {
-  position: absolute;
-  bottom: 50px; /* show above */
-  right: 0;
-  background-color: #1f1f2f;
-  color: white;
-  padding: 8px 10px;
-  border-radius: 6px;
-  z-index: 999;
-  box-shadow: 0 0 10px rgba(0,0,0,0.4);
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
-.attachment-popup div {
-  margin: 6px 0;
+.attach-button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 0.4em;
+  border-radius: 0.5em;
   cursor: pointer;
 }
 
-.selected-file {
-  margin-top: 8px;
-  background-color: #2c2c3e;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 5px;
-  font-size: 14px;
+.attach-menu-float {
+  position: absolute;
+  bottom: 2.5em;
+  left: 0;
+  background-color: #2c2f48;
+  border-radius: 0.5em;
+  padding: 0.5em;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  z-index: 20;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 160px;
-  z-index: 1000;
+  flex-direction: column;
+  gap: 0.4em;
 }
 
-.send-btn {
-  margin-top: 8px;
-  background-color: #3478f6;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
+.attach-menu-float button {
+  background: none;
   color: white;
-  font-size: 14px;
+  border: none;
+  padding: 0.4em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attached-file-strip {
+  position: absolute;
+  top: -2.5em;
+  left: 0.5em;
+  background-color: #1e2038;
+  border: 1px solid #444;
+  border-radius: 0.4em;
+  padding: 0.3em 0.6em;
+  color: #ccc;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.remove-file {
+  background: none;
+  color: #f88;
+  border: none;
+  font-size: 1em;
   cursor: pointer;
 }

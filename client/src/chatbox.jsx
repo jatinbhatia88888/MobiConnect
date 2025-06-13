@@ -4,7 +4,7 @@ import { Attachment } from './Attachment.jsx';
 import './home.css' ;
  <link href="./src/styles.css" rel="stylesheet"></link>
 export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
-  
+  const [updateFlag, setUpdateFlag] = useState(false);
   const [isMember, setIsMember] = useState(true);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -12,8 +12,8 @@ export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
   const [hasMore, setHasMore] = useState(true);
   const messagesRef = useRef(null);
   const [incomingCall, setIncomingCall] = useState(null);
-   
-
+  const attachmentRef = useRef(null);
+  const [downloadedMap, setDownloadedMap] = useState({});
 const handleScroll = (e) => {
   if (e.target.scrollTop === 0 && hasMore) {
     const next = page + 1;
@@ -42,19 +42,26 @@ const rejectCall = () => {
     setIncomingCall(null);
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
+     let sentFileMessage = null;
+     if (attachmentRef.current?.hasSelectedFile()) {
+    sentFileMessage = await attachmentRef.current.sendSelectedFile();
+  }
     socket.emit('sendMessage', {
       recv: toUser.peerInfo,
       type:toUser.type,
       contenttype:'text',
       message,
     });
+    
+
     if (messagesRef.current) {
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }
+  if(message.trim()!=""){
     setMessages(prev => [...prev, { content:message, to:toUser.peerInfo ,from:currentUser,contenttype:'text',timestamp:new Date()}]);
     setMessage('');
-  };
+  }};
 
   const fetchMessages = async (initial = false) => {
   const res = await fetch(`http://localhost:8000/messages?peer=${toUser.peerInfo}&type=${toUser.type}&page=${page}&limit=20`, {
@@ -70,10 +77,16 @@ const rejectCall = () => {
   
 
   useEffect(() => {
-    socket.on('receiveMessage', ({ message, fromUser,contenttype,timestamp }) => {
+    socket.on('receiveMessage', ({ message, fromUser,contenttype,timestamp,url }) => {
       console.log(message);
-      if (fromUser === toUser.peerInfo) {
-        setMessages(prev => [...prev, { content: message, from: toUser.peerInfo ,to:currentUser,contenttype:contenttype ,timestamp}]);
+      console.log(url);
+      console.log(contenttype);
+      // if (fromUser === toUser.peerInfo) {
+        setMessages(prev => [...prev, { content: message, from: fromUser ,to:currentUser,contenttype:contenttype ,timestamp,url}]);
+      // }
+      if(fromUser===currentUser&&url!=undefined){
+         const localKey = `downloaded-${url}`;
+    const alreadyDownloaded = localStorage.getItem(localKey) === 'true';
       }
     });
     setMessages([]);
@@ -155,13 +168,28 @@ function handleVideoCall(type, targetName) {
     const alreadyDownloaded = localStorage.getItem(localKey) === 'true';
     const timestamp = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const handleDownload = () => {
-      const a = document.createElement('a');
-      a.href = m.url;
-      a.download = m.content;
-      a.click();
-      localStorage.setItem(localKey, 'true');
-    };
+    const handleDownload = async () => {
+  try {
+    const response = await fetch(m.url, { mode: 'cors' });
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = m.content || 'file';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    window.URL.revokeObjectURL(url); 
+    localStorage.setItem(`downloaded-${m.url}`, 'true'); 
+     setUpdateFlag(prev => !prev);
+  } catch (error) {
+    console.error('Download failed', error);
+    alert('Failed to download file');
+  }
+};
 
     const handleOpen = () => {
       window.open(m.url, '_blank');
@@ -170,7 +198,7 @@ function handleVideoCall(type, targetName) {
     return (
       <div key={idx} className={`message-bubble ${isMe ? 'me' : 'them'}`}>
         {m.contenttype === 'text' && <p>{m.content}</p>}
-
+         
         {m.contenttype === 'img' && (
           <div
             className="media-container"
@@ -200,9 +228,9 @@ function handleVideoCall(type, targetName) {
     );
   })}
         </div>
-        
+         
         <div className="typebar">
-          
+            <Attachment ref={attachmentRef} currentUser={currentUser} toUser={toUser} />
            <div className="inner-typebar">
           <input
             value={message}

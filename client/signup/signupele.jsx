@@ -1,6 +1,38 @@
 import React from 'react';
 import './src/signupform.css'; 
+import { auth, provider, signInWithPopup } from '../auth.js'
+ 
+  const handleGoogleSignup = async () => {
+    try {
+     
+      const result = await signInWithPopup(auth, provider);
 
+      const user = result.user;
+      const token = await user.getIdToken(); 
+
+     
+      const res = await fetch('http://localhost:8000/auth/google-login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await res.json();
+
+      if (data.needsProfileSetup) {
+        
+        localStorage.setItem('googleId', data.googleId);
+        window.location.href = '/profile';
+      } else {
+       
+        onLogin(data.user);
+      }
+    } catch (err) {
+      console.error('Google signup failed', err);
+      alert('Failed to sign up with Google');
+    }
+  };
 export const SignUp = (
     {url}
 ) => {
@@ -18,7 +50,7 @@ export const SignUp = (
               <input type="password" placeholder="Password" />
               <input type="password" placeholder="Confirm Password" />
               <button type="submit">Sign Up</button>
-              <button type="button" className="google-signin">
+              <button type="button" className="google-signin" onClick={handleGoogleSignup}>
                 <i className="fab fa-google"></i> Sign up with Google
               </button>
             </form>

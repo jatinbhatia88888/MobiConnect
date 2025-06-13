@@ -1,81 +1,69 @@
-import React, { useRef, useState } from "react";
-import "./attachment.css";
+import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import './attachment.css';
 
-export const Attachment = ({ sender, recv, onFileReady }) => {
-  const [showOptions, setShowOptions] = useState(false);
+const Attachment = forwardRef(({ currentUser, toUser }, ref) => {
   const [selectedFile, setSelectedFile] = useState(null);
-  const fileInputRef = useRef(null);
-  const imageInputRef = useRef(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const imageInputRef = useRef();
+  const fileInputRef = useRef();
 
-  const toggleOptions = () => {
-    setShowOptions((prev) => !prev);
-  };
-const handleSend = async () => {
-    if (!selectedFile) return;
+  useImperativeHandle(ref, () => ({
+    sendSelectedFile: async () => {
+      if (!selectedFile) return null;
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('sender', sender);
-    formData.append('recv', recv);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('from', currentUser);
+      formData.append('to', toUser.peerInfo);
+      formData.append('type', toUser.type);
 
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
+      try {
+        const res = await fetch('http://localhost:8000/mobiconnect/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+        const data = await res.json();
+        setSelectedFile(null);
+        return data.message;
+      } catch (err) {
+        console.error('Upload error:', err);
+        return null;
+      }
+    },
+    hasSelectedFile: () => !!selectedFile
+  }));
 
-    const result = await response.json();
-    if (result.url) {
-      onUploadSuccess(result);
-      setSelectedFile(null);
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setShowMenu(false);
     }
   };
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setSelectedFile(file);
-    setShowOptions(false);
-  };
 
-  const removeFile = () => setSelectedFile(null);
-
-  
   return (
     <div className="attachment-wrapper">
-      <button className="attach-btn" onClick={toggleOptions}>📎</button>
-
-      {showOptions && (
-        <div className="attachment-popup">
-          <div onClick={() => imageInputRef.current.click()}>🖼️ Image</div>
-          <div onClick={() => fileInputRef.current.click()}>📄 File</div>
-          <div onClick={toggleOptions}>❌ Close</div>
+      {selectedFile && (
+        <div className="attached-file-strip">
+          <span>📎 {selectedFile.name}</span>
+          <button className="remove-file" onClick={() => setSelectedFile(null)}>✕</button>
         </div>
       )}
 
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-      />
+      <button className="attach-button" onClick={() => setShowMenu(prev => !prev)}>📎</button>
 
-      {selectedFile && (
-        <div className="selected-file">
-          <span>{selectedFile.name}</span>
-          <button onClick={removeFile}>✖</button>
+      {showMenu && (
+        <div className="attach-menu-float">
+          <button onClick={() => imageInputRef.current.click()}>🖼 Image</button>
+          <input type="file" accept="image/*" ref={imageInputRef} hidden onChange={handleFileSelect} />
+
+          <button onClick={() => fileInputRef.current.click()}>📄 Document</button>
+          <input type="file" accept=".pdf,.doc,.docx" ref={fileInputRef} hidden onChange={handleFileSelect} />
         </div>
-      )}
-
-      {selectedFile && (
-        <button className="send-btn" onClick={handleSend}>Send</button>
       )}
     </div>
   );
-};
+});
 
-
+export { Attachment };

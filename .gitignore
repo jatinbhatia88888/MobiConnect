@@ -8,3 +8,4 @@ node_modules/
 client/.vite/
 dist/
 client/dist/
+ServiceAccount.json

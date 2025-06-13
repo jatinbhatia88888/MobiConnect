@@ -17,7 +17,11 @@ const userSchema=new mongoose.Schema({
       chattedWith:[{
     type:String,
       
-  }]
+  }],
+  imgurl:{
+    type:String
+
+  }
 });
 const  User= mongoose.model('User', userSchema);
 export default  User

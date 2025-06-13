@@ -1,6 +1,6 @@
 .search-box {
   width: 15%;
-  position: relative; /* Needed for dropdown absolute positioning */
+  position: relative; 
   display: flex;
   flex-direction: column;
   background-color: #2c2f48;
@@ -158,12 +158,12 @@
   background-color: #357ac9;
 }
 .message-bubble {
-  max-width: 75%;
-  padding: 3px 4px;
+  max-width: 100%;
+  padding: 4px 0px;
   border-radius: 12px;
   font-size: 14px;
   word-break: break-word;
-  margin-bottom: 10px;
+  /* margin-bottom: 5px; */
   position: relative;
 }
 
@@ -225,11 +225,11 @@
 .timestamp {
   font-size: 11px;
   color: #888;
-  margin-top: 1px;
+  margin-top: 0.6px;
   text-align: right;
 }
 
-/* Responsive */
+
 @media screen and (max-width: 600px) {
   .message-bubble {
     max-width: 90%;

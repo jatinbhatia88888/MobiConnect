@@ -219,7 +219,7 @@ app.get("/messages", isAuthenticated, async (req, res) => {
       .sort({ timestamp: -1 }) 
       .skip(parseInt(offset))
       .limit(parseInt(limit))
-     .select('from to timestamp content contenttype -_id'); ;
+     .select('from to timestamp content contenttype url -_id'); ;
      console.log(`mee pa dokah ${messages}`)
     res.json(messages.reverse()); 
   } catch (err) {
@@ -362,11 +362,14 @@ io.on("connect",(socket)=>{
     
    
     socket.on("sendMessage",async (msg)=>{
+      if(msg.message=="undefined"||msg.message=="") return 
+      if(msg.recv==session.username) return ;
       let type=msg.type;
       
       console.log(msg);
       if(type==="user"){
       if (!chattedWithSet.has(msg.recv)) {
+
       const receiver = await User.findOne({ name: msg.recv });
       const sender = await User.findOne({ name: session.username});
       console.dir(sender)
@@ -389,12 +392,12 @@ io.on("connect",(socket)=>{
       }
        chattedWithSet.add(msg.recv); 
     }
-    
+      
       const newMsg = new Message({
        from: session.username,
        to: msg.recv,
        type,
-      contenttype:'text',
+       contenttype:'text',
        content: msg.message
      });
 
@@ -412,6 +415,7 @@ io.on("connect",(socket)=>{
       })
       }}
       if(type=="group"){
+        if(msg.message=="undefined"||msg.message=="") return 
         const newMsg = new Message({
        from: session.username,
        to: msg.recv,
@@ -433,9 +437,6 @@ io.on("connect",(socket)=>{
     })
 
     
-
-
-
 
 
 
@@ -758,7 +759,7 @@ socket.on('resumeConsumer', async ({ consumerId,roomName }) => {
 
 
 
-app.use('/home', createUploadRoute(io, userSocketMap));
+app.use('/mobiconnect', createUploadRoute(io, userSocketMap));
 
 
 

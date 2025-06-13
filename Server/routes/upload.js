@@ -3,14 +3,15 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
 import Message from '../model/MessageSchema.js';
-
+import dotenv from 'dotenv'
+dotenv.config()
 const router = express.Router();
 
 
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUD_KEY,
-  api_secret: process.env.CLOUD_SECRET,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 
@@ -32,6 +33,7 @@ export default function createUploadRoute(io, userSocketMap) {
   router.post('/upload', upload.single('file'), async (req, res) => {
     try {
       const { from, to, type } = req.body;
+      console.log('to us fron',to);
       const file = req.file;
 
       if (!file) return res.status(400).json({ error: 'No file provided' });
@@ -47,6 +49,7 @@ export default function createUploadRoute(io, userSocketMap) {
         to,
         type,
         contenttype,
+        content:"juju",
         url,
         content: file.originalname,
       });
@@ -56,11 +59,12 @@ export default function createUploadRoute(io, userSocketMap) {
         contenttype,
         url,
         fromUser: from,
-      };
+        timestamp:savedMessage.timestamp,
+      };                                    
 
       
       if (type === 'group') {
-        io.to(`group`).emit('receiveMessage', socketPayload);
+        io.to(to).emit('receiveMessage', socketPayload);
       } else {
         const senderSocketId = userSocketMap.get(from);
         const receiverSocketId = userSocketMap.get(to);
