@@ -13,11 +13,10 @@ const userSocketMap = new Map();
 import sharedSession from 'express-socket.io-session';
 import Message from './model/MessageSchema.js'
 import * as mediasoup from 'mediasoup'; 
-
-import { v2 as cloudinary } from 'cloudinary';
 import os from 'os';
-import callRoom from './model/callroom.js';
+import Signup from './routes/signup.js'
 import createUploadRoute from './routes/upload.js'
+
 const mediaCodecs = [
   {
     kind: "audio",
@@ -92,8 +91,16 @@ app.get("/search/user",isAuthenticated , async (req,res)=>{
       { name: 1, _id: 0 }
     );
   console.log(users);
-  res.json(users)
+  res.send(users)
 })
+app.post("/search/email",async(req,res)=>{
+  const email=req.body.email;
+  const user = await User.findOne({ email: email });
+  console.log("user is",user);
+ res.json({exist:!!user});
+  
+}
+)
 app.get("/search/group",isAuthenticated , async (req,res)=>{
   const query=req.query.query;
  const users = await Rooms.find(
@@ -136,45 +143,7 @@ app.post('/login', async (req, res) => {
 
 
 
-app.post('/signup', async (req, res) => {
-  const name = req.body.name;
-  const email = req.body.email;
-
-  console.log(name);
-  console.log(email);
-
-  const inst = new User({
-    name: name,
-    email: email
-  });
-
-  try {
-    await inst.save();
-    console.log(inst);
-
-    req.session.regenerate((err) => {
-      if (err) {
-        return res.status(500).send("Session regeneration failed");
-      }
-
-      req.session.username = name;
-      req.session.userId = inst._id;
-
-      req.session.save(err => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.redirect("http://localhost:5173/login");
-        }
-
-        res.redirect("http://localhost:5173/home");
-      });
-    });
-
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.redirect("http://localhost:5173/login");
-  }
-});
+app.use('/signup',Signup)
 
 app.post('/create-group',isAuthenticated, async (req,res)=>{
   

@@ -5,21 +5,39 @@ export function ProfileSetup() {
   const [username, setUsername] = useState('');
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [usernameExists, setUsernameExists] = useState(false);
+  useEffect(() => {
+    if (!username) return;
+
+    const delayDebounce = setTimeout(async () => {
+      const res = await fetch("http://localhost:8000/check-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+
+      const data = await res.json();
+      console.log("data is",data);
+      setUsernameExists(data.exists);
+    }, 500);
+
+    return () => clearTimeout(delayDebounce); 
+  }, [username]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Username:', username);
     console.log('Image:', image);
-    // Send image + username to backend
+   
   };
 
-  // Generate preview when image changes
+  
   useEffect(() => {
     if (!image) return;
     const objectUrl = URL.createObjectURL(image);
     setPreview(objectUrl);
 
-    // Clean up on unmount
+   
     return () => URL.revokeObjectURL(objectUrl);
   }, [image]);
 
@@ -39,7 +57,7 @@ export function ProfileSetup() {
           <div className="profile-box">
             <form onSubmit={handleSubmit}>
               
-              {/* Show preview if available */}
+              
               {preview && (
                 <div className="photo-preview">
                   <img src={preview} alt="Preview" className="preview-img" />
@@ -53,7 +71,15 @@ export function ProfileSetup() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
-
+              {username && (
+                <div className="username-check">
+                  {usernameExists ? (
+                    <span style={{ color: 'red' }}>Username already taken</span>
+                  ) : (
+                    <span style={{ color: 'green' }}>Username available</span>
+                  )}
+                </div>
+              )}
               <input
                 type="file"
                 accept="image/*"
@@ -61,7 +87,7 @@ export function ProfileSetup() {
                 required
               />
 
-              <button type="submit">Save Profile</button>
+              <button type="submit" disabled={usernameExists}>Save Profile</button>
             </form>
           </div>
         </div>

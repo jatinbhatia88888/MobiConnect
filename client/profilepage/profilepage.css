@@ -112,7 +112,22 @@ body, html {
   background: #5f56f5;
 }
 
-/* Responsive Styles */
+.username-check {
+  margin-top: 0rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  min-height: 1.2rem;
+}
+
+.username-check.available {
+  color: #2ecc71; 
+}
+
+.username-check.taken {
+  color: #e74c3c; 
+}
+
 @media (max-width: 1024px) {
   .main-content {
     flex-direction: column;
@@ -128,6 +143,7 @@ body, html {
     padding: 2rem 1.5rem;
   }
 }
+
 .photo-preview {
   width: 120px;
   height: 120px;

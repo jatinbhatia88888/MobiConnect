@@ -1,9 +1,16 @@
 import {mongoose} from 'mongoose'
 //import Rooms from './models/roomSchema'
 const userSchema=new mongoose.Schema({
+    origname:{
+      type:String,
+    },
+    googleid:{
+      type:String,
+
+    },
     name:{
         type:String,
-        required:true
+        
     },
     email:{
         type:String,
@@ -21,6 +28,9 @@ const userSchema=new mongoose.Schema({
   imgurl:{
     type:String
 
+  },
+  password:{
+    type:String
   }
 });
 const  User= mongoose.model('User', userSchema);

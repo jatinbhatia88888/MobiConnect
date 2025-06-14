@@ -1,7 +1,7 @@
-/* Import Font Awesome for icons */
+
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
-/* Reset and base styles */
+
 body, html {
   margin: 0;
   padding: 0;
@@ -15,7 +15,7 @@ body, html {
   box-sizing: inherit;
 }
 
-/* Wrapper using flex layout */
+
 .signup-wrapper {
   display: flex;
   flex-direction: column;
@@ -102,7 +102,7 @@ body, html {
   color: white;
 }
 
-/* Right branding panel */
+
 .signup-right {
   flex: 1;
   background: linear-gradient(180deg, #1f2937, #111827);
@@ -136,7 +136,7 @@ body, html {
   color: #ccc;
 }
 
-/* Footer styling */
+
 .footer {
   background: linear-gradient(90deg, #1f2937, #3b82f6);
   color: white;
@@ -172,7 +172,11 @@ body, html {
   transform: scale(1.2);
 }
 
-/* Responsive Styles */
+.error-text {
+  color: red;
+  font-size: 0.85em;
+  margin-top: 0.25em;
+}
 @media (max-width: 1024px) {
   .main-content {
     flex-direction: column;
