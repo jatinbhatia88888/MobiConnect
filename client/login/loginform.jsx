@@ -1,8 +1,76 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './src/loginform.css';
- 
+import { auth, provider, signInWithPopup } from '../auth.js';
 
-export  function Form({url}) {
+export function Form({ url }) {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [errorText, setErrorText] = useState('');
+
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorText('');
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+     if (res.ok) {
+      console.log("dataneedProfileSetup",data.needsProfileSetup);
+        if (data.needsProfileSetup) {
+
+        window.location.href = '/profile';
+     } else {
+       window.location.href = '/home';
+    }
+   } else {
+     setError(data.error || 'Login failed'); 
+         } 
+    } catch (err) {
+      console.error('Login error:', err);
+      setErrorText('Something went wrong. Please try again.');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const token = await user.getIdToken();
+
+      const res = await fetch('http://localhost:8000/auth/google-login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await res.json();
+
+     if (data.success) {
+  if (data.needsProfileSetup) {
+    window.location.href = '/profile';
+  } else {
+    window.location.href = '/home';
+  }}
+    } catch (err) {
+      console.error('Google login error:', err);
+      setErrorText('Google login failed');
+    }
+  };
+
   return (
     <div className="login-wrapper">
       <div className="main-content">
@@ -18,11 +86,28 @@ export  function Form({url}) {
           <h2 className="page-title">Login Page</h2>
           <div className="login-box">
             <h2>Welcome Back</h2>
-            <form>
-              <input type="email" placeholder="Email" required />
-              <input type="password" placeholder="Password" required />
+            <form onSubmit={handleSubmit}>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+
+              {errorText && <div className="error-text">{errorText}</div>}
+
               <button type="submit">Login</button>
-              <button type="button" className="google-signin">
+              <button type="button" className="google-signin" onClick={handleGoogleLogin}>
                 <i className="fab fa-google"></i> Login with Google
               </button>
             </form>
@@ -41,6 +126,5 @@ export  function Form({url}) {
         </div>
       </footer>
     </div>
-
   );
 }

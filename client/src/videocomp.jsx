@@ -21,59 +21,89 @@ export function VideoRoom({ roomName }) {
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
       const newDevice = new Device();
-      const { routerRtpCapabilities } = await new Promise(resolve =>
-        socket.emit('join-call-room', {roomName:roomName}, resolve)
+      const { routerRtpCapabilities } = await new Promise((resolve )=>{
+        console.log("emitted-call-room",roomName);
+        socket.emit('join-call-room', {roomName:roomName}, resolve)}
       );
+      
       await newDevice.load({ routerRtpCapabilities });
       setDevice(newDevice);
 
       socket.emit('join-room', { roomName });
       console.log(`joined room `)
-      
-      socket.emit('createProducerTransport', {roomName:roomName}, async ( params ) => {
-        const sendTransport = newDevice.createSendTransport(params);
-        sendTransport.on('connect', ({ dtlsParameters }, callback,errback) => {
-          socket.emit('connectProducerTransport', { dtlsParameters ,roomName},()=>{ callback()});
-        });
-        sendTransport.on('produce', ({ kind, rtpParameters }, callback) => {
-          socket.emit('produce', { kind, rtpParameters,roomName }, ({ id }) => callback({ id }));
-        });
-        stream.getTracks().forEach(track => sendTransport.produce({ track }));
+      let sendTransport;
+      // socket.emit('createProducerTransport', {roomName:roomName}, async ( params ) => {
+      //    sendTransport = newDevice.createSendTransport(params);
+           
+      // });
+
+       const sendData = await new Promise(resolve => {
+        socket.emit('createProducerTransport', {roomName:roomName}, resolve);
       });
 
-       let recvTransport;
-      socket.emit('createConsumerTransport', {roomName:roomName}, async ( params ) => {
-         recvTransport = newDevice.createRecvTransport(params);
-        setConsumerTransport(recvTransport);
-        recvTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
-          socket.emit('connectConsumerTransport', { dtlsParameters,roomName }, res => {
+      sendTransport = newDevice.createSendTransport(sendData);
+
+
+
+
+
+        sendTransport.on('connect', ({ dtlsParameters }, callback) => {
+           console.log('connect');
+          socket.emit('connectProducerTransport', { dtlsParameters ,roomName,transportId: sendTransport.id},()=>{ callback()});
+        });
+
+        sendTransport.on('produce', ({ kind, rtpParameters }, callback) => {
+          socket.emit('produce', { kind, rtpParameters,roomName,transportId: sendTransport.id}, ({ id }) => callback({ id }));
+        });
+
+         for (const track of stream.getTracks()) {
+  await sendTransport.produce({ track });
+}
+         
+       let recvTransport=null;
+      // socket.emit('createConsumerTransport', {roomName:roomName}, async ( params ) => {
+      //    recvTransport = newDevice.createRecvTransport(params);
+      //    console.log("recvTransport")
+      //    console.dir(recvTransport);
+        
+        
+      // });
+       if(recvTransport===null){
+        const recvData = await new Promise(resolve => {
+          socket.emit('createConsumerTransport', {roomName:roomName}, resolve);
+        });
+        recvTransport = newDevice.createRecvTransport(recvData);
+      }
+      console.log("receive transport is",recvTransport);
+      setConsumerTransport(recvTransport);
+      recvTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
+          socket.emit('connectConsumerTransport', { dtlsParameters,roomName,transportId: recvTransport.id }, res => {
             if (res?.error) errback(res.error); else callback();
           });
         });
-
-        socket.emit('getProducers', {roomName}, async ( {producers} ) => {
+      socket.emit('getProducers', {roomName}, async ( {producers} ) => {
           for (const { producerSocketId,producerId, kind } of producers) {
             console.log(`username is id is ${producerId}`)
             consumeTrack(recvTransport, producerSocketId, kind,producerId);
           }
         });
+        
           socket.on('new-producer', async ({  producerSocketId: socketId, producerId, kind  }) => {
         console.log("New producer received:", socketId, kind,producerId);
         consumeTrack(recvTransport, socketId, kind,producerId);
       });
-      });
-        
     
     };
 
-    const consumeTrack = async (transport, producerSocketId, kind,producerId) => {
-      if (!transport) return;
+    const consumeTrack = async (recvTransport, producerSocketId, kind,producerId) => {
+      if (!recvTransport) return;
       socket.emit('consume', { producerSocketId, kind ,roomName,producerId}, async ({ id,producerId, rtpParameters }) => {
-        const consumer = await transport.consume({ id, kind,producerId, rtpParameters, paused: true });
+        const consumer = await recvTransport.consume({ id, kind,producerId, rtpParameters });
          socket.emit('resumeConsumer', { consumerId: consumer.id ,roomName});
         setRemoteStreams(prev => {
           const current = prev[producerSocketId] || new MediaStream();
           current.addTrack(consumer.track);
+          console.dir(consumer.track);
           return { ...prev, [producerSocketId]: current };
         });
       });
@@ -151,12 +181,19 @@ export function VideoRoom({ roomName }) {
         </div>
       </div>
 
-      <div className="remote-videos">
-        {Object.entries(remoteStreams).map(([id, stream]) => (
-          
-  <RemoteVideo key={id} stream={stream} />
+      {Object.entries(remoteStreams).map(([producerSocketId, stream]) => (
+  <video                    
+    key={producerSocketId}
+    autoPlay
+    style={{ backgroundColor: 'lightblue' }}
+    playsInline
+    ref={(el) => {
+      if (el) el.srcObject = stream;
+    }}
+    width={400}
+  />
 ))}
-      </div>
+
 
       <style>{`
         .video-call {

@@ -23,7 +23,7 @@ export function Homepage() {
       .catch(err => console.error("Failed to fetch current user:", err));
   }, []);
   
-  
+
   return (
     <div className="home-container">
       <div className="home-sidebar">
@@ -33,7 +33,7 @@ export function Homepage() {
         <div className="home-search">
         <SearchUser onUserSelect={setPeer} require="user" handleGroupAdded={handleGroupAdded}/>
         <SearchUser onUserSelect={setPeer} require="group" handleGroupAdded={handleGroupAdded}/>
-          <AddGroupForm onGroupCreated={handleGroupAdded} />
+        <AddGroupForm onGroupCreated={handleGroupAdded} />
 
         </div>
         

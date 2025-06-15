@@ -10,26 +10,21 @@ export function ProfileSetup() {
     if (!username) return;
 
     const delayDebounce = setTimeout(async () => {
-      const res = await fetch("http://localhost:8000/check-username", {
+      const res = await fetch("http://localhost:8000/profile/username", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       });
 
       const data = await res.json();
-      console.log("data is",data);
+     
       setUsernameExists(data.exists);
-    }, 500);
+    }, 250);
 
     return () => clearTimeout(delayDebounce); 
   }, [username]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Username:', username);
-    console.log('Image:', image);
-   
-  };
+ 
 
   
   useEffect(() => {
@@ -40,6 +35,37 @@ export function ProfileSetup() {
    
     return () => URL.revokeObjectURL(objectUrl);
   }, [image]);
+  
+
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append('username', username);
+  formData.append('image', image);
+
+  try {
+    const res = await fetch('http://localhost:8000/profile/setup', {
+      method: 'POST',
+      credentials: 'include', 
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('Profile saved successfully');
+      window.location.href = '/home'; 
+    } else {
+      alert(data.error || 'Failed to save profile');
+    }
+  } catch (err) {
+    console.error('Profile setup error:', err);
+    alert('Something went wrong.');
+  }
+};
+
 
   return (
     <div className="profile-wrapper">

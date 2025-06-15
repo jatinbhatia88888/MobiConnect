@@ -9,14 +9,17 @@ import User from './model/userSchema.js'
 import session from 'express-session'
 import Rooms from './model/roomSchema.js';
 import MongoStore from 'connect-mongo';
-const userSocketMap = new Map(); 
+import { userSocketMap } from './controller/userSocketMap.js'; 
 import sharedSession from 'express-socket.io-session';
 import Message from './model/MessageSchema.js'
 import * as mediasoup from 'mediasoup'; 
 import os from 'os';
 import Signup from './routes/signup.js'
 import createUploadRoute from './routes/upload.js'
-
+import profileRouter from './routes/profile.js'
+import loginRouter from './routes/login.js'
+import homeRouter from './routes/home.js'
+import logoutRouter from './routes/logout.js'
 const mediaCodecs = [
   {
     kind: "audio",
@@ -72,6 +75,7 @@ const io= new Server(server,{
         credentials: true
     }
 });
+app.set("io", io);
 
 const isAuthenticated = (req, res, next) => {
   if (req.session.userId) return next();
@@ -110,40 +114,15 @@ app.get("/search/group",isAuthenticated , async (req,res)=>{
   console.log(users);
   res.json(users)
 })
-app.post('/login', async (req, res) => {
-  const name = req.body.name;
-  const email = req.body.email;
-  console.log(name);
-  console.log(email);
 
-  const user = await User.findOne({ email });
-
-  if (!user || user.name !== name) {
-    return res.redirect("http://localhost:5173/login");
-  }
-
-  req.session.regenerate((err) => {
-    if (err) {
-      return res.status(500).send("Session regeneration failed");
-    }
-
-    req.session.userId = user._id;
-    req.session.username = user.name;
-
-    req.session.save(err => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.redirect("http://localhost:5173/login");
-      }
-
-      res.redirect("http://localhost:5173/home");
-    });
-  });
-});
 
 
 
 app.use('/signup',Signup)
+app.use('/profile',profileRouter)
+app.use('/login',loginRouter)
+app.use('/home',homeRouter)
+app.use('/logout',logoutRouter)
 
 app.post('/create-group',isAuthenticated, async (req,res)=>{
   
@@ -221,48 +200,11 @@ const NUM_WORKERS = Math.min(numCores - 1, 4);
 
 console.log("Media Soup Workers are:");
 console.dir(mediasoupWorkers);
-
-
-
-
-
-
-
-
-
-
 const rooms = new Map();
-
-
-
-
-
-
-
-
-
-
-
 io.use(sharedSession(mongosession, {
   autoSave: true
 }));
-app.get("/chatuser",isAuthenticated,async (req,res)=>{
-   
-   const ans = await User.findOne({ name: req.session.username }, 'chattedWith');
 
-    console.log(` happy happy plss mahakal ${req.session.username}`)
-    console.log(ans);                               
- console.log(ans.chattedWith);
- if(ans==null) res.json(["startchatting "])
-  res.json(ans.chattedWith);
-})
-app.get("/chatgroup",isAuthenticated,async (req,res)=>{
-   
-   const ans = await User.findOne({ name: req.session.username }, 'rooms');
-   console.log(ans.rooms);
-   if(ans==null) res.json(["startchatting "])
-   res.json(ans.rooms);
-})
 
 
 
@@ -299,7 +241,7 @@ app.get('/home/me', (req, res) => {
 app.post("/joinroom",async (req,res)=>{
   console.dir(req);
   const userId = req.session.username; 
-   const  groupId  = req.body.groupname;
+  const  groupId  = req.body.groupname;
 
   const user = await User.findOne({name:req.session.username});
   if (!user.rooms.includes(groupId)) {
@@ -380,7 +322,7 @@ io.on("connect",(socket)=>{
         fromUser:session.username,
 
         contenttype:'text',
-        timestamp:newsg.timestamp,
+        timestamp:newMsg.timestamp,
       })
       }}
       if(type=="group"){
@@ -454,10 +396,17 @@ io.on("connect",(socket)=>{
 
 
 
+  
+  socket.on("start-video-call", async ({ room, to, type }) => {
 
-    socket.on("start-video-call", ({ room, to, type }) => {
   const from = socket.handshake.session.username;
-
+  if (!rooms.has(room)) {
+    const worker = mediasoupWorkers[0]; 
+   
+    const router = await worker.createRouter({ mediaCodecs });
+    rooms.set(room, { router, peers: new Map() });
+  }
+  console.log("room is-to-type",room ,to,type);
   if (type === "user") {
     const toSocketId = userSocketMap.get(to);
     if (toSocketId) {
@@ -471,11 +420,12 @@ io.on("connect",(socket)=>{
 socket.on('join-call-room', async ({ roomName }, callback) => {
   if (!rooms.has(roomName)) {
     const worker = mediasoupWorkers[0]; 
-    // console.dir(mediasoupWorkers)
+   
+    console.log('join-call-room',roomName);
     const router = await worker.createRouter({ mediaCodecs });
     rooms.set(roomName, { router, peers: new Map() });
   }
-
+console.log("join-call-room", roomName)
   const room = rooms.get(roomName);
   room.peers.set(socket.id, { transports: [], producers: [], consumers: [] });
   
@@ -484,16 +434,20 @@ socket.on('join-call-room', async ({ roomName }, callback) => {
 socket.on('createProducerTransport', async ({ roomName }, callback) => {
   console.log(`room name is ${roomName}`)
   const room = rooms.get(roomName);
-  const transport = await room.router.createWebRtcTransport({ listenIps: [{ ip: '0.0.0.0', announcedIp: null }], 
+  const transport = await room.router.createWebRtcTransport({ listenIps: [{ ip: '127.0.0.1', announcedIp: null }], 
   enableUdp: true,
   enableTcp: true,
   preferUdp: true,
   initialAvailableOutgoingBitrate: 1000000 });
-
+  
   room.peers.get(socket.id).transports.push(transport);
   room.peers.get(socket.id).producerTransport = transport;
-  transport.observer.once('close', () => {
+   transport.on('dtlsstatechange', (state) => {
+      if (state === 'closed') transport.close();
+    });
+  transport.on('close', () => {
     room.peers.get(socket.id).transports = room.peers.get(socket.id).transports.filter(t => t !== transport);
+    transport.close();
   });
 
   callback({
@@ -502,26 +456,26 @@ socket.on('createProducerTransport', async ({ roomName }, callback) => {
     iceCandidates: transport.iceCandidates,
     dtlsParameters: transport.dtlsParameters
   });
-
-  
+  console.log("produce transport created",transport);
+  console.dir(transport);  
   
   
 });
-     socket.on('connectProducerTransport', async ({ dtlsParameters ,roomName}, ack) => {
+     socket.on('connectProducerTransport', async ({ dtlsParameters ,roomName,transportId}, ack) => {
       
     const room =rooms.get(roomName);
      console.dir(room);
-    const transport =room.peers.get(socket.id).producerTransport;
-   await  transport.connect({ dtlsParameters });
+     const transport = room.peers.get(socket.id).transports.find(t => t.id === transportId);
+      await  transport.connect({ dtlsParameters });
     ack();
   });
 
 
-  socket.on('produce', async ({ kind, rtpParameters,roomName }, callback) => {
+  socket.on('produce', async ({ kind, rtpParameters,roomName,transportId }, callback) => {
  
   try{
      const room =rooms.get(roomName);
-    const transport =room.peers.get(socket.id).producerTransport;
+     const transport = room.peers.get(socket.id).transports.find(t => t.id === transportId);
     const producer = await transport.produce({ kind, rtpParameters });
 
     const peer = room.peers.get(socket.id);
@@ -529,12 +483,12 @@ socket.on('createProducerTransport', async ({ roomName }, callback) => {
     peer.producers = peer.producers || [];
     peer.producers.push(producer);
 
-    producer.on('transportclose', () => {
-      peer.producers = peer.producers.filter(p => p.id !== producer.id);
-    })
+    // producer.on('transportclose', () => {
+    //   peer.producers = peer.producers.filter(p => p.id !== producer.id);
+    // })
     console.log(`user ${session.username} produced producer id is:${producer.id}&socketisd is${socket.id}`);
     console.log('length of peer.producers',peer.producers.length)
-    callback({ id: producer.id });
+    
 
     
     for (const [otherSocketId] of room.peers.entries()) {
@@ -549,7 +503,7 @@ socket.on('createProducerTransport', async ({ roomName }, callback) => {
         }
       }
     }
-
+    callback({ id: producer.id });
   } catch (error) {
     console.error('produce error:', error);
     callback({ error: error.message });
@@ -615,7 +569,7 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
     }
 
     const transport = await room.router.createWebRtcTransport({
-      listenIps: [{ ip: '0.0.0.0', announcedIp: null }],
+      listenIps: [{ ip: '127.0.0.1', announcedIp: null }],
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
@@ -655,14 +609,14 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
    
   const producerPeer = room.peers.get(producerSocketId);
   console.log(`In consume producer peer length is:${producerPeer.producers.length}`)
-  const producer = producerPeer.producers.find(p => p.id === producerId);
-  if(producer===undefined) {
-    console.log("username is consuming undefined ",session.username);
-    return;
-  }
+  // const producer = producerPeer.producers.find(p => p.id === producerId);
+  // if(producer===undefined) {
+  //   console.log("username is consuming undefined ",session.username);
+  //   return;
+  // }
    const peer = room.peers.get(socket.id);
    const consumer = await peer.consumerTransport.consume({
-    producerId: producer.id,
+    producerId: producerId,
     rtpCapabilities: room.router.rtpCapabilities,
     paused: false
   });
@@ -671,7 +625,7 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
 
   callback({
     id: consumer.id,
-    producerId: producer.id,
+    producerId: producerId,
     kind: consumer.kind,
     rtpParameters: consumer.rtpParameters
   });

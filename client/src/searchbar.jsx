@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 
 import './home.css'
-export  function SearchUser({ onUserSelect ,require}) {
+export  function SearchUser({ onUserSelect ,require,handleGroupAdded}) {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);
 
@@ -33,7 +33,8 @@ export  function SearchUser({ onUserSelect ,require}) {
         <ul className="dropdown">
           {users.map(user => (
             <li key={user.name} onClick={() => {onUserSelect({peerInfo:user.name,type:require}),
-              setUsers([])
+              setUsers([]),
+              handleGroupAdded()
             }}>
               {user.name}
             </li>
