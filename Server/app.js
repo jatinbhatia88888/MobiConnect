@@ -471,7 +471,7 @@ socket.on('createProducerTransport', async ({ roomName }, callback) => {
   });
 
 
-  socket.on('produce', async ({ kind, rtpParameters,roomName,transportId }, callback) => {
+  socket.on('produce', async ({ kind, rtpParameters,roomName,transportId ,type}, callback) => {
  
   try{
      const room =rooms.get(roomName);
@@ -481,7 +481,7 @@ socket.on('createProducerTransport', async ({ roomName }, callback) => {
     const peer = room.peers.get(socket.id);
     if (!peer) return callback({ error: 'Peer not found in room' });
     peer.producers = peer.producers || [];
-    peer.producers.push(producer);
+    peer.producers.push({producer,type});
 
     // producer.on('transportclose', () => {
     //   peer.producers = peer.producers.filter(p => p.id !== producer.id);
@@ -498,7 +498,8 @@ socket.on('createProducerTransport', async ({ roomName }, callback) => {
             otherSocket.emit('new-producer', {
             producerSocketId: socket.id,
             producerId: producer.id,
-            kind
+            kind,
+            type,
           });
         }
       }
@@ -541,11 +542,12 @@ socket.on('getProducers', ({ roomName }, callback) => {
 
   for (const [peerSocketId, peer] of room.peers.entries()) {
     if (peerSocketId === socket.id) continue; 
-    for (const producer of peer.producers) {
+    for (const {producer,type} of peer.producers) {
       producerList.push({
         producerSocketId: peerSocketId,
         producerId: producer.id,
         kind: producer.kind,
+        type:type,
       });
     }
   }
@@ -609,11 +611,7 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
    
   const producerPeer = room.peers.get(producerSocketId);
   console.log(`In consume producer peer length is:${producerPeer.producers.length}`)
-  // const producer = producerPeer.producers.find(p => p.id === producerId);
-  // if(producer===undefined) {
-  //   console.log("username is consuming undefined ",session.username);
-  //   return;
-  // }
+  
    const peer = room.peers.get(socket.id);
    const consumer = await peer.consumerTransport.consume({
     producerId: producerId,
@@ -642,6 +640,40 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
       return;
     }
   }
+  socket.on('leave-room', ({ roomName }) => {
+  const room = rooms.get(roomName);
+  if (!room) return;
+
+  const peer = room.peers.get(socket.id);
+  if (!peer) return;
+
+  
+  for (const {producer,type} of peer.producers || []) {
+    try { producer.close(); } catch {}
+  }
+
+  
+  for (const transport of peer.transports || []) {
+    try { transport.close(); } catch {}
+  }
+
+  
+  room.peers.delete(socket.id);
+
+  socket.to(roomName).emit('peer-left', { socketId: socket.id });
+
+  if (room.peers.size === 0) {
+    rooms.delete(roomName);
+  }
+});
+
+
+
+
+
+
+
+
 
   socket.join(roomName)});
   socket.on('disconnect', () => {
@@ -650,7 +682,7 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
     if (!peer) return;
 
     peer.transports.forEach(t => t.close());
-    peer.producers.forEach(p => p.close());
+    peer.producers.forEach(({producer,type}) => producer.close());
     peer.consumers.forEach(c => c.close());
 
     room.peers.delete(socket.id);
@@ -671,9 +703,39 @@ socket.on('resumeConsumer', async ({ consumerId,roomName }) => {
   const consumer = peer.consumers.find(c => c.id === consumerId);
   await consumer.resume();
 });
+
 // setInterval(()=>{
 //   console.dir(rooms.get('user-hh-jj').peers);
 // },100000)
+socket.on('stop-screen-share', ({ roomName, transportId }) => {
+  const room = rooms.get(roomName);
+  if (!room) return;
+
+  const peer = room.peers.get(socket.id);
+  if (!peer) return;
+
+ 
+  peer.transports = peer.transports.filter((transport) => {
+    if (transport.id === transportId) {
+      try { transport.close(); } catch {}
+      return false;
+    }
+    return true;
+  });
+
+  peer.producers = peer.producers.filter(({ producer, type }) => {
+    if (type === 'screen') {
+      try { producer.close(); } catch {}
+      return false;
+    }
+    return true;
+  });
+
+  
+  socket.to(roomName).emit('peer-left', { socketId: socket.id, type: 'screen' });
+});
+
+
 
  
 });

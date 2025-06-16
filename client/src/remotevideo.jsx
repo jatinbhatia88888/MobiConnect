@@ -10,7 +10,7 @@ export function RemoteVideo({ stream }) {
     let isCancelled = false;
 
     const setupStream = async () => {
-      // Only set srcObject if it's a different stream
+      
       if (video.srcObject !== stream) {
         video.srcObject = stream;
          video.onloadedmetadata = () => {
@@ -37,7 +37,7 @@ export function RemoteVideo({ stream }) {
     <video
       ref={videoRef}
       autoPlay
-      muted={true} // use true to allow autoplay without user gesture
+      muted={true} 
       playsInline
       className="remote-video"
       style={{ width: "100%", height: "auto", backgroundColor: "black" }}
