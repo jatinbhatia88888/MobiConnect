@@ -10,6 +10,8 @@ export function VideoRoom({ roomName }) {
   const recvTransportRef = useRef(null);
   const screenTransportRef = useRef(null);
   const localScreenVideoRef = useRef(null);
+ const [showLocalScreen, setShowLocalScreen] = useState(false);
+  const [localScreenStream, setLocalScreenStream] = useState(null);
 
   const [remoteStreams, setRemoteStreams] = useState({});
   const [remoteScreenStreams, setRemoteScreenStreams] = useState({});
@@ -185,10 +187,12 @@ export function VideoRoom({ roomName }) {
 
       screenTransportRef.current.close();
       screenTransportRef.current = null;
+      
     }
 
     setScreenTrack(null);
     setScreenTransport(null);
+    setShowLocalScreen(false);
     return;
   }
 
@@ -197,10 +201,10 @@ export function VideoRoom({ roomName }) {
     if (localScreenVideoRef.current) {
   localScreenVideoRef.current.srcObject = screenStream;
 }
-
+setLocalScreenStream(screenStream); 
     const track = screenStream.getVideoTracks()[0];
     setScreenTrack(track);
-
+    setShowLocalScreen(true);
      let transport =null;
        
       
@@ -230,22 +234,32 @@ export function VideoRoom({ roomName }) {
       
 
 
-  track.onended = () => {
-    if (screenTransportRef.current) {
-      screenTransportRef.current.close();
-      screenTransportRef.current = null;
-    }
-    setScreenTrack(null);
-    setScreenTransport(null);
-
-    
+ track.onended = () => {
+  if (screenTransportRef.current) {
     socket.emit('stop-screen-share', {
-        roomName,
-        transportId: screenTransportRef.current.id
-      });
-  };
+      roomName,
+      transportId: screenTransportRef.current.id
+    });
+
+    screenTransportRef.current.close();
+    screenTransportRef.current = null;
+  }
+
+  setScreenTrack(null);
+  setScreenTransport(null);
+  setShowLocalScreen(false);
+};
 
   };
+  useEffect(() => {
+  if (localScreenVideoRef.current && localScreenStream) {
+    localScreenVideoRef.current.srcObject = localScreenStream;
+    localScreenVideoRef.current.play().catch((e) => {
+      console.warn("Autoplay failed:", e);
+    });
+  }
+}, [localScreenStream]);
+
    
 
   
@@ -330,7 +344,7 @@ export function VideoRoom({ roomName }) {
    
 
    
-     <div className="local-container">
+    {showLocalScreen && <div className="local-container">
         <video ref={localScreenVideoRef} autoPlay className="local-video" />
 
         <div className="controls">
@@ -338,7 +352,7 @@ export function VideoRoom({ roomName }) {
           <button onClick={toggleScreenShare}>{screenTrack ? 'Stop Screen' : 'Share Screen'}</button>
          
         </div>
-      </div>
+      </div>}
     
 
       {Object.entries(remoteScreenStreams).map(([producerSocketId, stream]) => (
