@@ -9,3 +9,5 @@ client/.vite/
 dist/
 client/dist/
 ServiceAccount.json
+test.css
+test.html

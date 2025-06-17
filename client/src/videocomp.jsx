@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
-
+import  {VideoSlider} from './remotevideo.jsx'
 import { socket } from './socket';
 
 export function VideoRoom({ roomName }) {
@@ -308,120 +308,25 @@ setLocalScreenStream(screenStream);
   
   window.location.href = '/home';
 };
-
+const controlButtons = [
+  <button className="control-btn" onClick={toggleAudio}>🎤 Mute</button>,
+  <button className="control-btn" onClick={toggleVideo}>📹 Video Off</button>,
+  <button className="control-btn" onClick={toggleScreenShare}>📤 Share</button>,
+  <button className="control-btn" onClick={endCall}>➕ Add Video</button>,
+];
 
 
 
   return (
-    <div className="video-call">
-      <div className="local-container">
-        <video ref={localVideoRef} autoPlay  className="local-video" />
-        <div className="controls">
-          <button onClick={toggleVideo}>{isVideoEnabled ? 'Turn Off Video' : 'Turn On Video'}</button>
-          <button onClick={toggleAudio}>{isAudioEnabled ? 'Mute' : 'Unmute'}</button>
-          <button onClick={toggleScreenShare}>{screenTrack ? 'Stop Screen' : 'Share Screen'}</button>
-          <button onClick={endCall} style={{ backgroundColor: 'red' }}>End Call</button>
-        </div>
-      </div>
-    
+    <div>
+   <VideoSlider
+  localStream={mediaStream}
+  localScreenStream={localScreenStream}
+  remoteStreams={remoteStreams}
+  remoteScreenStreams={remoteScreenStreams}
+  controlButtons={controlButtons}
+/>
 
-      {Object.entries(remoteStreams).map(([producerSocketId, stream]) => (
-        
-  <video                    
-    key={producerSocketId}
-    autoPlay
-    style={{ backgroundColor: 'lightblue' }}
-    playsInline
-    ref={(el) => {
-      if (el) el.srcObject = stream;
-    }}
-    
-    width={400}
-  />
-
-)
-)}
-   
-
-   
-    {showLocalScreen && <div className="local-container">
-        <video ref={localScreenVideoRef} autoPlay className="local-video" />
-
-        <div className="controls">
-          
-          <button onClick={toggleScreenShare}>{screenTrack ? 'Stop Screen' : 'Share Screen'}</button>
-         
-        </div>
-      </div>}
-    
-
-      {Object.entries(remoteScreenStreams).map(([producerSocketId, stream]) => (
-        
-  <video                    
-    key={producerSocketId}
-    autoPlay
-    style={{ backgroundColor: 'lightblue' }}
-    playsInline
-    ref={(el) => {
-      if (el) el.srcObject = stream;
-    }}
-    
-    width={400}
-  />
-  
-  
-
-
-))}
-
-   
-
-
-      <style>{`
-        .video-call {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          max-width: 100vw;
-          overflow: hidden;
-        }
-        .local-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-bottom: 10px;
-        }
-        .controls button {
-          margin: 4px;
-          padding: 6px 10px;
-          border: none;
-          background-color: #007bff;
-          color: white;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .controls button:hover {
-          background-color: #0056b3;
-        }
-        .local-video {
-          width: 300px;
-          height: 200px;
-          background: black;
-        }
-        .remote-videos {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          justify-content: center;
-          width: 100%;
-          padding: 10px;
-        }
-        .remote-video {
-          width: 250px;
-          height: 180px;
-          background: black;
-        }
-      `}</style>
     </div>
   );
-}
+} 
