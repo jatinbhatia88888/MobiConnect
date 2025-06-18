@@ -6,15 +6,15 @@ export function VideoSlider({
   localScreenStream,
   remoteStreams = {},
   remoteScreenStreams = {},
-  controlButtons = [], // e.g., array of JSX buttons from parent
+  controlButtons = [],
+ trigger
 }) {
   const [pinnedId, setPinnedId] = useState(null);
   const [boxList, setBoxList] = useState([]);
 
-  // Ref to hold video elements to cleanup streams
+  
   const videoRefs = useRef({});
 
-  // Update box list when any stream updates
   useEffect(() => {
     const updatedList = [];
 
@@ -35,10 +35,14 @@ export function VideoSlider({
     }
 
     setBoxList(updatedList);
-  }, [localStream, localScreenStream, remoteStreams, remoteScreenStreams]);
+    if (pinnedId && !updatedList.find(b => b.id === pinnedId)) {
+    setPinnedId(null);
+  }
+  }, [localStream, localScreenStream, remoteStreams, remoteScreenStreams,trigger]);
 
   // Cleanup streams from removed refs
   useEffect(() => {
+    console.log("cleanup called");
     const activeIds = new Set(boxList.map(b => b.id));
     for (const id in videoRefs.current) {
       if (!activeIds.has(id)) {
@@ -50,7 +54,7 @@ export function VideoSlider({
         delete videoRefs.current[id];
       }
     }
-  });
+  },[boxList,trigger]);
 
   const getBoxesPerPage = () => {
     const width = window.innerWidth;
@@ -86,28 +90,37 @@ export function VideoSlider({
         {label}
       </span>
       <button className="pin-btn" onClick={() => setPinnedId(prev => (prev === id ? null : id))}>
-        📌
+       <i class="fas fa-thumbtack"></i>
       </button>
     </div>
   );
 
-  return (
-    <>
-      <div id="slider" className="slider">
-        {pinnedId && renderVideoBox(boxList.find(b => b.id === pinnedId), true)}
+return (
+  <>
+    <div id="slider" className="slider">
+      
+      {/* Page for pinned video, if exists */}
+      {pinnedId && boxList.find(b => b.id === pinnedId) && (
+  <div className="page">
+    {renderVideoBox(boxList.find(b => b.id === pinnedId), true)}
+  </div>
+)}
 
-        {paginated().map((page, i) => (
-          <div className="page" key={`page-${i}`}>
-            {page.map(video => renderVideoBox(video))}
-          </div>
-        ))}
-      </div>
 
-      <div className="bottom-bar">
-        {controlButtons.map((btn, index) => (
-          <span key={index}>{btn}</span>
-        ))}
-      </div>
-    </>
-  );
+      {/* Other video pages */}
+      {paginated().map((page, i) => (
+        <div className="page" key={`page-${i}`}>
+          {page.map(video => renderVideoBox(video))}
+        </div>
+      ))}
+    </div>
+
+    <div className="bottom-bar">
+      {controlButtons.map((btn, index) => (
+        <span key={index}>{btn}</span>
+      ))}
+    </div>
+  </>
+);
+
 }

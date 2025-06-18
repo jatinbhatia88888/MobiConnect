@@ -84,40 +84,41 @@
 }
 
 .messages p {
-  max-width: 70%;
-  padding: 0.6em 1em;
+  max-width: 100%;
+  
   border-radius: 1.2em;
-  font-size: 0.95em;
-  line-height: 1.4;
+ padding: 0.4em 0.8em;
+  font-size: 0.85em;
+  line-height: 1.2;
   word-wrap: break-word;
   position: relative;
 }
 
 
-.messages p.me {
-  align-self: flex-end;
-  background-color: #5af15f;
-  color: white;
-  border-bottom-right-radius: 0;
-}
 
 
-.messages p.them {
-  align-self: flex-start;
-  background-color: #e073e4;
-  color: white;
-  border-bottom-left-radius: 0;
-}
+
+
 
 .typebar {
   background-color: #1e2038;
   display: flex;
   justify-content: center;
-  padding: 0.8em 1em;
+  padding: 0.3em 0.6em;
   border-top: 1px solid #444;
   position: sticky;
   bottom: 0;
   z-index: 10;
+}
+.download-status {
+  color: #fff !important;
+   
+
+}
+
+
+.download-status i {
+  color: #fff;
 }
 
 
@@ -130,7 +131,7 @@
 
 .typebar input {
   flex: 1;
-  padding: 0.6em 1em;
+   padding: 0.4em 0.8em;
   border-radius: 1em;
   background-color: #363a5a;
   color: white;
@@ -139,9 +140,11 @@
 }
 
 .typebar button {
-  padding: 0.6em 1.2em;
+   padding: 0.4em 1em; 
+  margin: 0.5em; 
+  padding: 0.6em 1.2em;   
   border-radius: 1em;
-  margin:1em;
+ 
   background-color: #4a90e2;
   color: white;
   border: none;
@@ -157,25 +160,31 @@
 .typebar button:hover {
   background-color: #357ac9;
 }
+
 .message-bubble {
-  max-width: 100%;
-  padding: 4px 0px;
-  border-radius: 12px;
-  font-size: 14px;
+  max-width: min(90%, 600px);
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  padding: 0.6em 1em;
+  border-radius: 1.2em;
+  font-size: 0.95em;
   word-break: break-word;
-  /* margin-bottom: 5px; */
   position: relative;
+  background-color: #613463;
+  color: white;
 }
 
-.me {
+
+.message-bubble.me {
   align-self: flex-end;
-  background-color: #90e967;
+  background-color: #4a90e2;
   color: white;
   border-bottom-right-radius: 0;
 }
 
-.them {
-   align-self: flex-start;
+.message-bubble.them {
+  align-self: flex-start;
   background-color: #613463;
   color: white;
   border-bottom-left-radius: 0;
@@ -187,11 +196,55 @@
 }
 
 .media-container img {
-  max-width: 30%;
-  max-height: 200px;
-  border-radius: 10px;
-  transition: opacity 0.2s;
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  border-radius: 0.6em;
+  object-fit: contain;
 }
+
+.file-preview {
+  background-color: #2c2f48;
+  border: 1px solid #555;
+  padding: 0.8em;
+  border-radius: 1em;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  word-break: break-word;
+}
+
+.timestamp {
+  font-size: 0.75em;
+  color: #fff;
+  margin-top: 0.4em;
+  align-self: flex-end;
+}
+
+
+
+
+.typebar-wrapper {
+  position: relative;
+}
+
+.typebar {
+  display: flex;
+  align-items: center;
+  padding-top: 24px; 
+}
+.status {
+  font-size: 0.8em;
+  color: #666;
+}
+
+
+
+
+
 
 .download-status {
   font-size: 0.75em;
@@ -199,35 +252,55 @@
   margin-top: 4px;
 }
 
-.file-preview {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 12px;
+
+.photo-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7); /* Dim background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.photo-popup-inner {
+  position: relative;
+  background: white;
+  padding: 1em;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.photo-popup-inner img {
+  max-width: 100%;
+  max-height: 80vh;
+  display: block;
+  border-radius: 8px;
+}
+
+.close-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  font-size: 1.2em;
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
+  width: 30px;
+  height: 30px;
+  line-height: 28px;
+  text-align: center;
 }
 
-.file-preview:hover {
-  background-color: #e9e9e9;
-}
 
-.filename {
-  font-weight: 600;
-}
 
-.status {
-  font-size: 0.8em;
-  color: #666;
-}
 
-.timestamp {
-  font-size: 11px;
-  color: #888;
-  margin-top: 0.6px;
-  text-align: right;
-}
+
 
 
 @media screen and (max-width: 600px) {
@@ -238,5 +311,20 @@
 
   .media-container img {
     max-height: 150px;
+  }
+}
+@media screen and (max-width: 600px) {
+  .message-bubble {
+    max-width: 90%;
+    font-size: 0.85em;
+  }
+
+  .media-container img {
+    max-width: 100%;
+    max-height: 180px;
+  }
+
+  .typebar .inner-typebar {
+    width: 80%;
   }
 }

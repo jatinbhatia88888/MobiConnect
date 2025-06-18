@@ -124,26 +124,7 @@ app.use('/login',loginRouter)
 app.use('/home',homeRouter)
 app.use('/logout',logoutRouter)
 
-app.post('/create-group',isAuthenticated, async (req,res)=>{
-  
-  try{
-   
-    const inst =new Rooms({
-         name:req.body.groupname,
-         admin:req.session.username,
-         members:[req.session.username],
-    });
-      await inst.save();
-       
-       const peer= await User.findOne({name:req.session.username});
-       peer.rooms.push(req.body.groupname);
-        await peer.save();
-       res.json("ok");
-  }
-  catch{
-    res.send("error occured");
-  }
-})
+
 
 app.get("/messages", isAuthenticated, async (req, res) => {
   const { type,  peer, limit = 20, page = 0 } = req.query;
@@ -230,6 +211,7 @@ app.post("/checkroommembership",async (req,res)=>{
     return res.status(500).json({ error: 'Internal server error' });
   }
 })
+
 app.get('/home/me', (req, res) => {
   if (req.session && req.session.username) {
     res.json({ username: req.session.username });
@@ -264,7 +246,7 @@ io.on("connect",(socket)=>{
 
     userSocketMap.set(session.username, socket.id);
     socket.on('join-multiple-rooms', (groupList) => {
-  if(groupList!=null) groupList.forEach(groupId => socket.join(groupId));
+  if(groupList!=null) groupList.forEach(({name,imgurl} )=> socket.join(name));
   console.log(`Socket ${socket.id} joined rooms: ${groupList}`);
   console.dir(groupList)
 });
@@ -407,13 +389,20 @@ io.on("connect",(socket)=>{
     rooms.set(room, { router, peers: new Map() });
   }
   console.log("room is-to-type",room ,to,type);
+
   if (type === "user") {
     const toSocketId = userSocketMap.get(to);
+
     if (toSocketId) {
-      io.to(toSocketId).emit("incoming-video-call", { room, from, type });
+      
+    const user = await User.findOne({ name:from });
+     let imgurl=user.imgurl;
+  
+     
+      io.to(toSocketId).emit("incoming-video-call", { room,from,type,photo:imgurl });
     }
   } else if (type === "group") {
-    socket.to(to).emit("incoming-video-call", { room, from, type });
+    socket.to(to).emit("incoming-video-call", { room, from, type,photo:imgurl });
   }
 });
 
@@ -680,7 +669,7 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
   rooms.forEach((room, roomName) => {
     const peer = room.peers.get(socket.id);
     if (!peer) return;
-
+    socket.to(roomName).emit('peer-left', { socketId: socket.id });
     peer.transports.forEach(t => t.close());
     peer.producers.forEach(({producer,type}) => producer.close());
     peer.consumers.forEach(c => c.close());

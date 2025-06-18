@@ -1,61 +1,87 @@
 .attachment-wrapper {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-}
-
-.attach-button {
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  padding: 0.4em;
-  border-radius: 0.5em;
-  cursor: pointer;
-}
-
-.attach-menu-float {
-  position: absolute;
-  bottom: 2.5em;
-  left: 0;
-  background-color: #2c2f48;
-  border-radius: 0.5em;
-  padding: 0.5em;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4em;
-}
-
-.attach-menu-float button {
-  background: none;
-  color: white;
-  border: none;
-  padding: 0.4em;
-  text-align: left;
-  cursor: pointer;
+  position: relative;
 }
 
 .attached-file-strip {
   position: absolute;
-  top: -2.5em;
-  left: 0.5em;
-  background-color: #1e2038;
-  border: 1px solid #444;
-  border-radius: 0.4em;
-  padding: 0.3em 0.6em;
-  color: #ccc;
-  font-size: 0.9em;
+  bottom: 100%;
+  left: 0;
+  background-color: #2c2c2c;
+  color: #f0f0f0;
+  padding: 6px 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  gap: 0.5em;
+  justify-content: space-between;
+  width: max-content;
+  max-width: 250px;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 1001;
+}
+
+
+.attached-file-strip span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+ 
 }
 
 .remove-file {
   background: none;
-  color: #f88;
   border: none;
-  font-size: 1em;
+  color: #ff4d4d;
+  font-size: 1.2em;
+  margin-left: 10px;
   cursor: pointer;
+}
+
+.attach-button {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2em;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.attach-button:hover {
+  color: #fff;
+}
+
+.attach-menu-float {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  background-color: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor :pointer;
+  z-index: 1008;
+}
+
+.attach-menu-float button {
+  background: none;
+  border: none;
+  color: #ddd;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.attach-menu-float button:hover {
+  color: #fff;
+  background-color: #333;
+ 
 }

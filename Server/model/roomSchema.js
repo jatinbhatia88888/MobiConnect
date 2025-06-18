@@ -14,6 +14,10 @@ const room =new mongoose.Schema(
      type: String,
      required: true ,
   }],
+  imgurl:{
+    type:String
+
+  },
  
     }
     

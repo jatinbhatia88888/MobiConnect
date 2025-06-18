@@ -46,19 +46,19 @@ const Attachment = forwardRef(({ currentUser, toUser }, ref) => {
     <div className="attachment-wrapper">
       {selectedFile && (
         <div className="attached-file-strip">
-          <span>📎 {selectedFile.name}</span>
+          <span>{selectedFile.name}</span>
           <button className="remove-file" onClick={() => setSelectedFile(null)}>✕</button>
         </div>
       )}
 
-      <button className="attach-button" onClick={() => setShowMenu(prev => !prev)}>📎</button>
+      <button className="attach-button" onClick={() => setShowMenu(prev => !prev)}><i className="fa fa-paperclip" aria-hidden="true"></i></button>
 
       {showMenu && (
         <div className="attach-menu-float">
-          <button onClick={() => imageInputRef.current.click()}>🖼 Image</button>
+          <button onClick={() => imageInputRef.current.click()}><i className="fas fa-image"></i> Image</button>
           <input type="file" accept="image/*" ref={imageInputRef} hidden onChange={handleFileSelect} />
 
-          <button onClick={() => fileInputRef.current.click()}>📄 Document</button>
+          <button onClick={() => fileInputRef.current.click()}><i className="fa-solid fa-file"></i> Docu</button>
           <input type="file" accept=".pdf,.doc,.docx" ref={fileInputRef} hidden onChange={handleFileSelect} />
         </div>
       )}

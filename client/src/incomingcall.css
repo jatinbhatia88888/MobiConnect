@@ -1,0 +1,76 @@
+.incoming-call-popup {
+  position: fixed;
+  top: 50%; /* center vertically */
+  left: 50%; /* center horizontally */
+  transform: translate(-50%, -50%); /* center both ways */
+  background: #1e2038;
+  color: white;
+  border: 2px solid #4a90e2;
+  border-radius: 1.2em;
+  padding: 1.5em;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  width: 90%;         /* take most of screen width */
+  max-width: 300px;   /* limit max size on large screen */
+  box-sizing: border-box;
+}
+
+
+.popup-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.caller-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 0.6em;
+  border: 2px solid #4a90e2;
+}
+
+.caller-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 0.4em;
+}
+
+.incoming-text {
+  margin-bottom: 1em;
+  font-size: 1em;
+}
+
+.popup-buttons {
+  display: flex;
+  gap: 1em;
+}
+
+.accept-btn, .decline-btn {
+  padding: 0.5em 1em;
+  border: none;
+  border-radius: 0.8em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.accept-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.decline-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.accept-btn:hover {
+  background-color: #45a049;
+}
+
+.decline-btn:hover {
+  background-color: #e53935;
+}

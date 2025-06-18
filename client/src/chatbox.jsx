@@ -3,10 +3,15 @@ import { socket } from './socket';
 import { Attachment } from './Attachment.jsx';
 import './home.css' ;
  <link href="./src/styles.css" rel="stylesheet"></link>
+ import {IncomingCallPopup} from './Incomingcall.jsx';
+ import {GroupParticipant} from './groupparticpant.jsx';
 export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
   const [updateFlag, setUpdateFlag] = useState(false);
   const [isMember, setIsMember] = useState(true);
   const [message, setMessage] = useState('');
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [popupImage, setPopupImage] = useState(null);
   const [messages, setMessages] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -14,7 +19,7 @@ export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
   const [incomingCall, setIncomingCall] = useState(null);
   const attachmentRef = useRef(null);
   const [downloadedMap, setDownloadedMap] = useState({});
-const handleScroll = (e) => {
+  const handleScroll = (e) => {
   if (e.target.scrollTop === 0 && hasMore) {
     const next = page + 1;
     setPage(next);
@@ -24,8 +29,9 @@ const handleScroll = (e) => {
 
 
 useEffect(() => {
-    socket.on('incoming-video-call', ({ room, from }) => {
-      setIncomingCall({ room, from });
+    socket.on('incoming-video-call', ({ room, from,photo,type }) => {
+      console.log("caller is",from);
+      setIncomingCall({ room, from,photo});
     });
 
     return () => {
@@ -144,10 +150,16 @@ function handleVideoCall(type, targetName) {
   window.location.href = `/video?room=${room}`;
 }
 
+const handleShowParticipants = async () => {
+  const res = await fetch(`http://localhost:8000/home/groupmembers?group=${toUser.peerInfo}`, {
+    credentials: 'include',
+  });
+  const data = await res.json();
+  setParticipants(data.members); 
+  setShowParticipants(true);
+};
 
  
-
-
 
 
 
@@ -159,13 +171,15 @@ function handleVideoCall(type, targetName) {
         <button onClick={() => handleVideoCall(toUser.type, toUser.peerInfo)}>
        Start Video Call
         </button>
+        {toUser.type === "group" && (<button onClick={handleShowParticipants}>Show Participants</button>)}
+
           
         <div className="messages" onScroll={handleScroll} ref={messagesRef} style={{ height: '300px', overflowY: 'auto' }} >
 
           {messages.map((m, idx) => {
     const isMe = m.from === currentUser;
     const localKey = `downloaded-${m.url}`;
-    const alreadyDownloaded = localStorage.getItem(localKey) === 'true';
+    const alreadyDownloaded = isMe||localStorage.getItem(localKey) === 'true';
     const timestamp = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const handleDownload = async () => {
@@ -206,7 +220,8 @@ function handleVideoCall(type, targetName) {
           >
             <img src={m.url} alt={m.content} />
             <div className="download-status">
-              {alreadyDownloaded ? '✔️ Downloaded' : '📥 Tap to download'}
+              {alreadyDownloaded ? <><i className="fa-solid fa-check"></i> Downloaded</> : <><i className="fa-solid fa-download"></i> Tap to download</>}
+
             </div>
           </div>
         )}
@@ -216,9 +231,10 @@ function handleVideoCall(type, targetName) {
             className="file-preview"
             onClick={alreadyDownloaded ? handleOpen : handleDownload}
           >
-            <span className="filename">📄 {m.content}</span>
-            <span className="status">
-              {alreadyDownloaded ? '✔️ Downloaded' : '📥 Tap to download'}
+            <span className="filename"><i className="fa-solid fa-file"></i> {m.content}</span>
+            <span className="download-status">
+             {alreadyDownloaded ? <><i className="fa-solid fa-check"></i> Downloaded</> : <><i className="fa-solid fa-download"></i> Tap to download</>}
+
             </span>
           </div>
         )}
@@ -228,7 +244,7 @@ function handleVideoCall(type, targetName) {
     );
   })}
         </div>
-         
+         <div className="typebar-wrapper">
         <div className="typebar">
             <Attachment ref={attachmentRef} currentUser={currentUser} toUser={toUser} />
            <div className="inner-typebar">
@@ -240,14 +256,32 @@ function handleVideoCall(type, targetName) {
           </div>
 
           <button className="" onClick={sendMessage}>Send</button>
-         {incomingCall && (
-        <div className="incoming-call-popup" >
-          <p>Incoming call from <b>{incomingCall.from}</b></p>
-          <button onClick={acceptCall} >Accept</button>
-          <button onClick={rejectCall} >Reject</button>
+        {incomingCall && (
+  <IncomingCallPopup
+    senderPhoto={incomingCall.photo}
+    senderName={incomingCall.from}
+    onAccept={acceptCall}
+    onDecline={rejectCall}
+  />
+  
+)} {showParticipants && (
+ <GroupParticipant
+    members={participants}
+    onClose={() => setShowParticipants(false)}
+    setPopupImage={setPopupImage} 
+  />
+)}
+{popupImage && (
+  <div className="photo-popup" onClick={() => setPopupImage(null)}>
+    <div className="photo-popup-inner" onClick={e => e.stopPropagation()}>
+      <button className="close-btn" onClick={() => setPopupImage(null)}>✕</button>
+      <img src={popupImage} alt="Enlarged" />
+    </div>
+  </div>
+)}
+
         </div>
-      )}
-        </div>
+      </div>
       </div>
     ) : (
       <div className="chatbox">

@@ -18,6 +18,22 @@ html, body {
   width: 100vw;
   height: 100%;
 }
+.fullscreen-box {
+  width: 100vw;
+  height: calc(100vh - 4rem);
+  position: absolute; /* changed from static */
+  top: 0;
+  left: 0;
+  z-index: 5;
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fullscreen-box .video-box {
+  pointer-events: auto; /* allow video box itself to receive interactions like pin/unpin */
+}
 
 .page {
   flex: 0 0 100vw;
@@ -62,6 +78,20 @@ html, body {
   color: white;
   border: 3px solid #4e5a63;
 }
+.video-box {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.video-box video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
 
 .grid-box {
   flex: 0 0 calc(33.333% - 1rem);

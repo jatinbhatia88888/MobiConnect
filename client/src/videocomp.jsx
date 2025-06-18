@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
 import  {VideoSlider} from './remotevideo.jsx'
+
 import { socket } from './socket';
 
 export function VideoRoom({ roomName }) {
@@ -20,9 +21,10 @@ export function VideoRoom({ roomName }) {
   const [consumerTransport, setConsumerTransport] = useState(null);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isScreenShareEnabled,setIsScreenShareEnabled]=useState(false);
   const [screenTransport, setScreenTransport] = useState(null);
   const [screenTrack, setScreenTrack] = useState(null);
-
+  const [trigger, setTrigger] = useState(false);
   useEffect(() => {
     const start = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -131,7 +133,7 @@ export function VideoRoom({ roomName }) {
     start();
       const handlePeerLeft = ({ socketId, type }) => {
       console.log(`Peer left: ${socketId}, type: ${type}`);
-
+     setTrigger(prev => !prev)
     if (!type || type === "camera") {
       setRemoteStreams(prev => {
         const copy = { ...prev };
@@ -184,9 +186,12 @@ export function VideoRoom({ roomName }) {
         roomName,
         transportId: screenTransportRef.current.id
       });
-
+      
       screenTransportRef.current.close();
       screenTransportRef.current = null;
+      setLocalScreenStream(null); // 
+      setIsScreenShareEnabled(false);
+      setTrigger(prev => !prev)
       
     }
 
@@ -201,6 +206,7 @@ export function VideoRoom({ roomName }) {
     if (localScreenVideoRef.current) {
   localScreenVideoRef.current.srcObject = screenStream;
 }
+setIsScreenShareEnabled(true);
 setLocalScreenStream(screenStream); 
     const track = screenStream.getVideoTracks()[0];
     setScreenTrack(track);
@@ -240,9 +246,10 @@ setLocalScreenStream(screenStream);
       roomName,
       transportId: screenTransportRef.current.id
     });
-
+    setTrigger(prev => !prev)
     screenTransportRef.current.close();
     screenTransportRef.current = null;
+    setLocalScreenStream(null); 
   }
 
   setScreenTrack(null);
@@ -309,11 +316,20 @@ setLocalScreenStream(screenStream);
   window.location.href = '/home';
 };
 const controlButtons = [
-  <button className="control-btn" onClick={toggleAudio}>🎤 Mute</button>,
-  <button className="control-btn" onClick={toggleVideo}>📹 Video Off</button>,
-  <button className="control-btn" onClick={toggleScreenShare}>📤 Share</button>,
-  <button className="control-btn" onClick={endCall}>➕ Add Video</button>,
+  <button className="control-btn" onClick={toggleAudio}>
+    <i className="fas fa-microphone"></i> {isAudioEnabled ? "Audio On" : "Audio Off"}
+  </button>,
+  <button className="control-btn" onClick={toggleVideo}>
+    <i className="fas fa-video"></i> {isVideoEnabled ? "Video On" : "Video Off"}
+  </button>,
+  <button className="control-btn" onClick={toggleScreenShare}>
+    <i className="fas fa-desktop"></i> {isScreenShareEnabled? "Stop Share" : "Share Screen"}
+  </button>,
+  <button className="control-btn" onClick={endCall}>
+    <i className="fas fa-phone-slash"></i> End Call
+  </button>
 ];
+
 
 
 
@@ -325,6 +341,7 @@ const controlButtons = [
   remoteStreams={remoteStreams}
   remoteScreenStreams={remoteScreenStreams}
   controlButtons={controlButtons}
+ trigger={trigger}  
 />
 
     </div>

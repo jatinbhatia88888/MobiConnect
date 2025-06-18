@@ -31,6 +31,7 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
     fetch('http://localhost:8000/home/chatgroup', { credentials: 'include' })
   .then(res => res.json())
   .then(groups => {
+    console.log("groups are" ,groups);
     setGroups(groups);                    
     socket.emit('join-multiple-rooms', groups); 
   })
@@ -57,7 +58,7 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
           {open ? "⮜" : "⮞"}
         </button>
       </div>
-
+      <div className="sidebar-content">
       <div className="sidebar-section">
         <h2 className="section-title">{open ? "Chats" : "C"}</h2>
         <ul className="list">
@@ -109,6 +110,7 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
           ))}
         </ul>
       </div>
+      </div>
       <div className="logout-container">
   <button className="logout-btn" onClick={() => {
     fetch('http://localhost:8000/logout', {
@@ -120,7 +122,7 @@ export const Sidebar = ({ refreshTrigger,onUserSelect}) => {
       // console.error('Logout failed', err);
     // });
   }}>
-    🔒 {open ? "Logout" : ""}
+   <i className="fa fa-sign-out" aria-hidden="true"></i> {open ? "Logout" : ""}
   </button>
 </div>
     </div>
