@@ -72,7 +72,7 @@ export function ProfileSetup() {
       <div className="main-content">
         <div className="profile-left">
           <div className="branding">
-            <img className="logo-img" src="/logo.png" alt="Logo" />
+            <img className="logo-img" src="../src/logo.png" alt="Logo" />
             <h1>MobiConnect</h1>
             <p>Complete your profile to start messaging</p>
           </div>

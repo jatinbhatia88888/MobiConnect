@@ -7,7 +7,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import User from './model/userSchema.js'
 import session from 'express-session'
-
+import Rooms from './model/roomSchema.js'
 import MongoStore from 'connect-mongo';
 import { userSocketMap } from './utilities/userSocketMap.js'; 
 import sharedSession from 'express-socket.io-session';
@@ -200,7 +200,8 @@ io.on("connect",(socket)=>{
           message:msg.message,
           fromUser:msg.recv,
           timestamp:newMsg.timestamp,
-          _id:newMsg._id
+          _id:newMsg._id,
+           contenttype:'text',
            
   });
    socket.emit('message-ack',{
@@ -250,6 +251,14 @@ io.on("connect",(socket)=>{
       io.to(toSocketId).emit("incoming-video-call", { room,from,type,photo:imgurl });
     }
   } else if (type === "group") {
+     
+      
+    const roo = await Rooms.findOne({ name:to });
+     let imgurl=roo.imgurl;
+  
+     
+      
+    
     socket.to(to).emit("incoming-video-call", { room, from, type,photo:imgurl });
   }
 });
