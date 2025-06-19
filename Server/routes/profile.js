@@ -1,7 +1,7 @@
 import express from 'express';
 import User from '../model/userSchema.js';
 import multer from 'multer';
-import cloudinary from '../controller/cloudinary.js';
+import cloudinary from '../utilities/cloudinary.js';
 
 const router = express.Router();
 

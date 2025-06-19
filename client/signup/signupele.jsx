@@ -159,7 +159,7 @@ const handleSubmit = async (e) => {
         
         <div className="signup-right">
           <div className="branding">
-            <img src="/logo.png" alt="Logo" className="logo-img" />
+            <img src="../src/logo.png" alt="Logo" className="logo-img" />
             <h1>MobiConnect</h1>
             <p>Connect. Chat. Collaborate.</p>
           </div>

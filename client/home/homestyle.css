@@ -58,6 +58,25 @@ body{
   overflow: hidden;
   background-color: #2c2f48;
 }
+.search-wrap {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.search-wrap > *:first-child {
+  flex: 1;
+}
+
+.search-icon {
+  color: #ffffff !important;  
+  font-size: 20px;
+  margin-left: 8px;
+  position: relative;
+  top: 5px; 
+  align-self: center;
+}
+
 
 /* Responsive: stack everything vertically */
 @media (max-width: 768px) {

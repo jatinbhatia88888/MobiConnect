@@ -25,7 +25,7 @@ body, html {
   color: #fff;
 }
 
-/* Container for main content */
+
 .main-content {
   display: flex;
   flex-direction: row;
@@ -33,7 +33,7 @@ body, html {
   width: 100%;
 }
 
-/* Left signup panel */
+
 .signup-left {
   flex: 1;
   background: #f9fafb;
@@ -121,7 +121,7 @@ body, html {
 }
 
 .branding .logo-img {
-  width: 80px;
+  width: 200px;
   margin-bottom: 1rem;
 }
 

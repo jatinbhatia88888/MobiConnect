@@ -1,4 +1,4 @@
-import { userSocketMap } from '../controller/userSocketMap.js';
+import { userSocketMap } from '../utilities/userSocketMap.js';
 import express from 'express'
 const router = express.Router();
 

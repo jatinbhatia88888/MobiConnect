@@ -5,6 +5,7 @@ export function AddGroupForm({ onGroupCreated }) {
   const [groupName, setGroupName] = useState('');
   const [groupImage, setGroupImage] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [nameStatus, setNameStatus] = useState(null); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,12 +31,29 @@ export function AddGroupForm({ onGroupCreated }) {
       alert('Failed to create group');
     }
   };
+  const checkGroupName = async (name) => {
+  if (!name) return setNameStatus(null);
+
+  try {
+    const res = await fetch(`http://localhost:8000/home/check-groupname?name=${encodeURIComponent(name)}`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+    setNameStatus(data.available ? 'available' : 'taken');
+  } catch (err) {
+    console.error('Error checking group name:', err);
+    setNameStatus(null);
+  }
+};
+
 
   return (
     <>
       <div className="relative hover:bg-blue-700">
         <button onClick={() => setShowForm(true)} className="add-room-button">
-          ➕ Create Room
+          <i class="fa-solid fa-plus"></i> Create Room
         </button>
       </div>
 
@@ -48,10 +66,13 @@ export function AddGroupForm({ onGroupCreated }) {
               <input
                 type="text"
                 value={groupName}
-                onChange={e => setGroupName(e.target.value)}
+                onChange={e => {setGroupName(e.target.value);checkGroupName(e.target.value);}}
                 placeholder="Enter group name"
                 required
               />
+               {nameStatus === 'available' && (
+               <p className="name-status available"> Name available</p>)}
+               {nameStatus === 'taken' && (<p className="name-status taken"> Name already taken</p>)}
 
               <input
                 type="file"

@@ -76,7 +76,7 @@ export function Form({ url }) {
       <div className="main-content">
         <div className="login-left">
           <div className="branding">
-            <img className="logo-img" src="/logo.png" alt="Logo" />
+            <img className="logo-img" src="../src/logo.png" alt="Logo" />
             <h1>MobiConnect</h1>
             <p>Connect seamlessly, chat freely.</p>
           </div>

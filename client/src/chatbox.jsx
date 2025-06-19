@@ -17,6 +17,8 @@ export  function ChatWindow({ toUser ,handleGroupAdded,currentUser}) {
   const [hasMore, setHasMore] = useState(true);
   const messagesRef = useRef(null);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const attachmentRef = useRef(null);
   const [downloadedMap, setDownloadedMap] = useState({});
   const handleScroll = (e) => {
@@ -53,11 +55,13 @@ const rejectCall = () => {
      if (attachmentRef.current?.hasSelectedFile()) {
     sentFileMessage = await attachmentRef.current.sendSelectedFile();
   }
+    const tempId = Date.now().toString(); 
     socket.emit('sendMessage', {
       recv: toUser.peerInfo,
       type:toUser.type,
       contenttype:'text',
       message,
+      tempId,
     });
     
 
@@ -65,12 +69,12 @@ const rejectCall = () => {
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }
   if(message.trim()!=""){
-    setMessages(prev => [...prev, { content:message, to:toUser.peerInfo ,from:currentUser,contenttype:'text',timestamp:new Date()}]);
+    setMessages(prev => [...prev, { content:message, to:toUser.peerInfo ,from:currentUser,contenttype:'text',timestamp:new Date(),tempId}]);
     setMessage('');
   }};
 
   const fetchMessages = async (initial = false) => {
-  const res = await fetch(`http://localhost:8000/messages?peer=${toUser.peerInfo}&type=${toUser.type}&page=${page}&limit=20`, {
+  const res = await fetch(`http://localhost:8000/home/messages?peer=${toUser.peerInfo}&type=${toUser.type}&page=${page}&limit=20`, {
     credentials: 'include',
   });
   const data = await res.json();
@@ -83,18 +87,19 @@ const rejectCall = () => {
   
 
   useEffect(() => {
-    socket.on('receiveMessage', ({ message, fromUser,contenttype,timestamp,url }) => {
+    socket.on('receiveMessage', ({ message, fromUser,contenttype,timestamp,url,_id }) => {
       console.log(message);
       console.log(url);
       console.log(contenttype);
       // if (fromUser === toUser.peerInfo) {
-        setMessages(prev => [...prev, { content: message, from: fromUser ,to:currentUser,contenttype:contenttype ,timestamp,url}]);
+        setMessages(prev => [...prev, { content: message, from: fromUser ,to:currentUser,contenttype:contenttype ,timestamp,url,_id}]);
       // }
       if(fromUser===currentUser&&url!=undefined){
          const localKey = `downloaded-${url}`;
     const alreadyDownloaded = localStorage.getItem(localKey) === 'true';
       }
     });
+
     setMessages([]);
     setPage(1);
     fetchMessages(true);
@@ -102,11 +107,40 @@ const rejectCall = () => {
 
     return () => socket.off('receiveMessage');
   }, [toUser]);
+
+
+  useEffect(() => {
+  socket.on('message-ack', ({ _id, tempId }) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.tempId === tempId ? { ...msg, _id: _id, tempId: undefined } : msg
+      )
+    );
+  });
+
+
+  return () => socket.off('message-ack');
+}, []);
+useEffect(() => {
+
+  
+  socket.on('message-deleted', ({ _id }) => {
+      console.log("message delted called",_id);
+      console.dir(messages);
+
+    setMessages(prev => prev.filter(msg =>msg._id !== _id));
+  });
+
+  return () => {
+    socket.off('message-deleted');
+  };
+}, []);
+
   
  useEffect(() => {
     if (toUser.type=="user") return;
        
-    fetch('http://localhost:8000/checkroommembership',  {
+    fetch('http://localhost:8000/home/checkroommembership',  {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -117,7 +151,7 @@ const rejectCall = () => {
   }, [toUser.peerInfo]);
 
 const handleJoinGroup = () => {
-  fetch('http://localhost:8000/joinroom', {
+  fetch('http://localhost:8000/home/joinroom', {
     method: 'POST',
     credentials: 'include',
      headers: { 'Content-Type': 'application/json' },
@@ -158,6 +192,30 @@ const handleShowParticipants = async () => {
   setParticipants(data.members); 
   setShowParticipants(true);
 };
+const confirmDelete = async () => {
+  if (!deleteTarget) return;
+
+  try {
+    const res = await fetch(`http://localhost:8000/home/message/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ _id: deleteTarget}),
+    });
+
+    if (res.ok) {
+      setMessages(prev => prev.filter(m => m._id !== deleteTarget));
+      setDeleteTarget(null);
+    } else {
+      alert('Failed to delete message');
+    }
+  } catch (err) {
+    console.error('Error deleting message:', err);
+    alert('An error occurred');
+  }
+};
 
  
 
@@ -167,13 +225,18 @@ const handleShowParticipants = async () => {
     
     isMember ? (
       <div className="chat-window">
-        <h3>Chat with {toUser.peerInfo}</h3>
-        <button onClick={() => handleVideoCall(toUser.type, toUser.peerInfo)}>
-       Start Video Call
-        </button>
-        {toUser.type === "group" && (<button onClick={handleShowParticipants}>Show Participants</button>)}
+       <div className="chat-header">
+     <h3 className="chat-title">Chat with {toUser.peerInfo}</h3>
+     <div className="chat-icons">
+     <i className="fa-solid fa-video action-icon" title="Start Video Call"
+       onClick={() => handleVideoCall(toUser.type, toUser.peerInfo)}></i>
+     {toUser.type === "group" && (
+      <i className="fa-solid fa-users action-icon" title="Show Participants"
+         onClick={handleShowParticipants}></i>
+     )}
+    </div>
+    </div>
 
-          
         <div className="messages" onScroll={handleScroll} ref={messagesRef} style={{ height: '300px', overflowY: 'auto' }} >
 
           {messages.map((m, idx) => {
@@ -210,7 +273,7 @@ const handleShowParticipants = async () => {
     };
 
     return (
-      <div key={idx} className={`message-bubble ${isMe ? 'me' : 'them'}`}>
+      <div key={idx} onDoubleClick={() => isMe && setDeleteTarget(m._id)} className={`message-bubble ${isMe ? 'me' : 'them'}`}>
         {m.contenttype === 'text' && <p>{m.content}</p>}
          
         {m.contenttype === 'img' && (
@@ -279,6 +342,18 @@ const handleShowParticipants = async () => {
     </div>
   </div>
 )}
+{deleteTarget && (
+  <div className="photo-popup" onClick={() => setDeleteTarget(null)}>
+    <div className="photo-popup-inner" onClick={e => e.stopPropagation()}>
+      <p>Delete this message for everyone?</p>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+        <button className="btn cancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
+        <button className="btn delete" onClick={confirmDelete}>Delete</button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         </div>
       </div>

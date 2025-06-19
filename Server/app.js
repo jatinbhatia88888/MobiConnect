@@ -7,9 +7,9 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import User from './model/userSchema.js'
 import session from 'express-session'
-import Rooms from './model/roomSchema.js';
+
 import MongoStore from 'connect-mongo';
-import { userSocketMap } from './controller/userSocketMap.js'; 
+import { userSocketMap } from './utilities/userSocketMap.js'; 
 import sharedSession from 'express-socket.io-session';
 import Message from './model/MessageSchema.js'
 import * as mediasoup from 'mediasoup'; 
@@ -20,30 +20,16 @@ import profileRouter from './routes/profile.js'
 import loginRouter from './routes/login.js'
 import homeRouter from './routes/home.js'
 import logoutRouter from './routes/logout.js'
-const mediaCodecs = [
-  {
-    kind: "audio",
-    mimeType: "audio/opus",
-    clockRate: 48000,
-    channels: 2,
-  },
-  {
-    kind: "video",
-    mimeType: "video/VP8",
-    clockRate: 90000,
-    parameters: {
-      "x-google-start-bitrate": 1000,
-    },
-  }
-];
-
+import {mediaCodecs} from './utilities/mediaCodecs.js'
+import { isAuthenticated } from './utilities/isAuthenticated.js';
+import SearchRouter from './routes/search.js'
 dotenv.config()
 const uri = process.env.MONGODBURI
 
   mongoose.connect(uri)
-   .then(() => console.log("✅ Connected to MongoDB Atlas"))
+   .then(() => console.log(" Connected to MongoDB Atlas"))
    .then(()=>console.log(mongoose.connection.name))
-   .catch(err => console.error("❌ MongoDB connection error:", err));
+   .catch(err => console.error(" MongoDB connection error:", err));
 
    
 const app=express();
@@ -75,86 +61,21 @@ const io= new Server(server,{
         credentials: true
     }
 });
+
+
+
+
+
 app.set("io", io);
-
-const isAuthenticated = (req, res, next) => {
-  if (req.session.userId) return next();
-  console.log(`Blocked: ${req.session.userId}`);
-  console.log("checking session object");
-  console.dir(req.session)
- res.status(400).json({ error: 'Query parameter is required.' })
-};
-app.get('/',isAuthenticated,(req,res)=>{
-   res.send("hello sir ji")
-})
-
-app.get("/search/user",isAuthenticated , async (req,res)=>{
-  const query=req.query.query;
- const users = await User.find(
-      { name: new RegExp(query, 'i') },
-      { name: 1, _id: 0 }
-    );
-  console.log(users);
-  res.send(users)
-})
-app.post("/search/email",async(req,res)=>{
-  const email=req.body.email;
-  const user = await User.findOne({ email: email });
-  console.log("user is",user);
- res.json({exist:!!user});
-  
-}
-)
-app.get("/search/group",isAuthenticated , async (req,res)=>{
-  const query=req.query.query;
- const users = await Rooms.find(
-      { name: new RegExp(query, 'i') },
-      { name: 1, _id: 0 }
-    );
-  console.log(users);
-  res.json(users)
-})
-
-
-
-
 app.use('/signup',Signup)
 app.use('/profile',profileRouter)
 app.use('/login',loginRouter)
 app.use('/home',homeRouter)
 app.use('/logout',logoutRouter)
+app.use('/search',SearchRouter)
 
 
 
-app.get("/messages", isAuthenticated, async (req, res) => {
-  const { type,  peer, limit = 20, page = 0 } = req.query;
-  const username = req.session.username;
-   console.log(`${peer} is ${req.session.username} `)
-   let offset=(page-1)*limit;
-  const filter = {
-    type,
-    ...(type === 'user'                   
-      ? {
-          $or: [
-            { from: username,to: peer },
-            { from: peer, to: username }
-          ]
-        }
-      : { to: peer })
-  };
-  
-  try {
-    const messages = await Message.find(filter)
-      .sort({ timestamp: -1 }) 
-      .skip(parseInt(offset))
-      .limit(parseInt(limit))
-     .select('from to timestamp content contenttype url -_id'); ;
-     console.log(`mee pa dokah ${messages}`)
-    res.json(messages.reverse()); 
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load messages' });
-  }
-});
 
 const mediasoupWorkers = [];
 
@@ -189,56 +110,6 @@ io.use(sharedSession(mongosession, {
 
 
 
-
-
-
-app.post("/checkroommembership",async (req,res)=>{
-  const userId = req.session.userId;
-  const  groupId  = req.body.groupname;
-
-  try {
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(401).json({isMember:false,});
-    }
-
-    const isMember = user.rooms.includes(groupId);
-    return res.json({ isMember }); 
-
-  } catch (err) {
-    console.error("Membership check failed:", err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-})
-
-app.get('/home/me', (req, res) => {
-  if (req.session && req.session.username) {
-    res.json({ username: req.session.username });
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
-  }
-});
-
-app.post("/joinroom",async (req,res)=>{
-  console.dir(req);
-  const userId = req.session.username; 
-  const  groupId  = req.body.groupname;
-
-  const user = await User.findOne({name:req.session.username});
-  if (!user.rooms.includes(groupId)) {
-    user.rooms.push(groupId);
-    
-    await user.save();
-  }
-  const room =await Rooms.findOne({name:groupId});
-  if(!room.members.includes(userId)){
-        room.members.push(userId);
-        await room.save();
-  }
-  res.json({ success: true });
-
-})
 
 io.on("connect",(socket)=>{
     const session = socket.handshake.session;
@@ -295,6 +166,10 @@ io.on("connect",(socket)=>{
      });
 
     await newMsg.save();
+    socket.emit('message-ack',{
+  _id:newMsg._id,
+  tempId:msg.tempId,
+    });
       const toSocket = userSocketMap.get(msg.recv);
       if(!toSocket) return ;
       console.log(`toSocket:${toSocket}`);
@@ -305,6 +180,7 @@ io.on("connect",(socket)=>{
 
         contenttype:'text',
         timestamp:newMsg.timestamp,
+        _id:newMsg._id,
       })
       }}
       if(type=="group"){
@@ -316,6 +192,7 @@ io.on("connect",(socket)=>{
        content: msg.message,
        contenttype:'text',
        
+       
      });
 
     await newMsg.save();
@@ -323,8 +200,13 @@ io.on("connect",(socket)=>{
           message:msg.message,
           fromUser:msg.recv,
           timestamp:newMsg.timestamp,
+          _id:newMsg._id
            
   });
+   socket.emit('message-ack',{
+  _id:newMsg._id,
+  tempId:msg.tempId,
+    });
   console.log("message is sent in room");
       }
     })
@@ -345,40 +227,6 @@ io.on("connect",(socket)=>{
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
   socket.on("start-video-call", async ({ room, to, type }) => {
 
   const from = socket.handshake.session.username;
@@ -658,12 +506,6 @@ socket.on('createConsumerTransport', async ({ roomName }, callback) => {
 
 
 
-
-
-
-
-
-
   socket.join(roomName)});
   socket.on('disconnect', () => {
   rooms.forEach((room, roomName) => {
@@ -693,9 +535,7 @@ socket.on('resumeConsumer', async ({ consumerId,roomName }) => {
   await consumer.resume();
 });
 
-// setInterval(()=>{
-//   console.dir(rooms.get('user-hh-jj').peers);
-// },100000)
+
 socket.on('stop-screen-share', ({ roomName, transportId }) => {
   const room = rooms.get(roomName);
   if (!room) return;
@@ -723,9 +563,6 @@ socket.on('stop-screen-share', ({ roomName, transportId }) => {
   
   socket.to(roomName).emit('peer-left', { socketId: socket.id, type: 'screen' });
 });
-
-
-
  
 });
 
@@ -734,10 +571,6 @@ socket.on('stop-screen-share', ({ roomName, transportId }) => {
 
 
 app.use('/mobiconnect', createUploadRoute(io, userSocketMap));
-
-
-
-
 
 
 async function startServer() {
@@ -749,6 +582,5 @@ async function startServer() {
 
 }
 startServer().catch((err) => {
-  console.error("❌ Failed to start server:", err);
-  
+  console.error(" Failed to start server:", err);
 });

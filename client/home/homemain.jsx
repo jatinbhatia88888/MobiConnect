@@ -29,11 +29,19 @@ export function Homepage() {
       <div className="home-sidebar">
         <Sidebar refreshTrigger={refreshSidebar} onUserSelect={setPeer} />
       </div>
+      
       <div className="home-main">
         <div className="home-search">
+          
         <SearchUser onUserSelect={setPeer} require="user" handleGroupAdded={handleGroupAdded}/>
+       <i class="fa-solid fa-user search-icon"></i>
+      
+      
         <SearchUser onUserSelect={setPeer} require="group" handleGroupAdded={handleGroupAdded}/>
+        <i className="fa-solid fa-user-group search-icon"></i>
+       
         <AddGroupForm onGroupCreated={handleGroupAdded} />
+        
 
         </div>
         

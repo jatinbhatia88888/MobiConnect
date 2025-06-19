@@ -22,6 +22,11 @@
   outline: none;
   transition: border 0.2s ease;
 }
+.search-box input::placeholder {
+  color: white;
+  opacity: 1; 
+}
+
 
 .search-box input:focus {
   border: 1px solid #4a90e2;
@@ -137,6 +142,23 @@
   color: white;
   border: 1px solid #555;
   outline: none;
+}
+.chat-actions {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0 12px 0;
+  padding-left: 10px;
+}
+
+.action-icon {
+  font-size: 20px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.action-icon:hover {
+  color: #90caf9; 
 }
 
 .typebar button {
@@ -298,7 +320,61 @@
 }
 
 
+.photo-popup-inner p {
+  color: #000; 
+  font-size: 1em;
+  margin-bottom: 1em;
+}
 
+.photo-popup-inner .btn {
+  padding: 0.4em 1em;
+  border: none;
+  border-radius: 0.6em;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.photo-popup-inner .btn.cancel {
+  background-color: #ccc;
+  color: #000;
+}
+
+.photo-popup-inner .btn.delete {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #444;
+  color: white;
+}
+
+.chat-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.chat-icons {
+  display: flex;
+  gap: 12px;
+  margin-right: 8px;
+}
+
+.action-icon {
+  font-size: 20px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.action-icon:hover {
+  color: #90caf9;
+}
 
 
 

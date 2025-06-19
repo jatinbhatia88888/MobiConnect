@@ -88,3 +88,15 @@
   transform: scale(0.98);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
+.name-status {
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.name-status.available {
+  color: #38c172; 
+}
+
+.name-status.taken {
+  color: #e3342f; 
+}
